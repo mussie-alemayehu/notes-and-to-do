@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-// import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import './themes/light_theme.dart';
 import './themes/dark_theme.dart';
@@ -11,11 +10,7 @@ import './screens/note_details_screen.dart';
 import './screens/notes_list_screen.dart';
 import './screens/todos_list_screen.dart';
 
-void main() {
-  // WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  // FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
-  runApp(const MyApp());
-}
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

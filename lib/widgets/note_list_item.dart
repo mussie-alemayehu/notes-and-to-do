@@ -1,3 +1,5 @@
+// this widget will be displayed representing a single note in NotesListScreen screen
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -13,6 +15,7 @@ class NoteListItem extends StatelessWidget {
     required this.lastEdited,
   });
 
+  // a getter that returns the date in a user readable format
   String get _readableDate {
     if (lastEdited.isAfter(
       DateTime.now().subtract(
@@ -34,17 +37,20 @@ class NoteListItem extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // display the title of the note
             Text(
               title,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 10),
+            // display a maximum of 3 lines of the content of the note
             Text(
               content,
               style: Theme.of(context).textTheme.bodyMedium,
               maxLines: 3,
             ),
             const SizedBox(height: 10),
+            // display a user-readable format of the date
             Text(
               'Last edited: $_readableDate',
               style: Theme.of(context).textTheme.bodySmall,

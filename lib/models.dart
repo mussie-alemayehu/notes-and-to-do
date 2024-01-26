@@ -4,6 +4,7 @@ class Note {
   String content;
   DateTime lastEdited;
 
+  // the model for notes used in the entire app
   Note({
     required this.id,
     required this.title,
@@ -12,6 +13,7 @@ class Note {
   });
 }
 
+// the model for to-dos used in the entire app
 class ToDo {
   String id;
   String action;

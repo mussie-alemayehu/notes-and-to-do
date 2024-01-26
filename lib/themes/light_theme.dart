@@ -1,3 +1,5 @@
+// specification of the colors in light theme
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

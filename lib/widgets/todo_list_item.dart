@@ -1,3 +1,5 @@
+// this widget will be displayed representing a single note in the ToDosListScreen screen
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -29,6 +31,7 @@ class ToDoListItem extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
+          // a check-box to represent the state of the to-do item
           Checkbox(
             value: todo.isDone,
             shape: const CircleBorder(),
@@ -37,6 +40,7 @@ class ToDoListItem extends StatelessWidget {
             },
           ),
           const SizedBox(width: 10),
+          // using a gesture detector to allow toggling when the text part is tapped
           GestureDetector(
             onTap: () {
               Provider.of<ToDos>(context, listen: false).toggleCompletion(todo);
