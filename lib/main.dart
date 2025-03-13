@@ -3,10 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import './firebase_options.dart';
+
+// themes
 import './themes/light_theme.dart';
 import './themes/dark_theme.dart';
+
+// providers
 import './providers/notes.dart';
+import './providers/auth.dart';
 import './providers/to_dos.dart';
+
+// screens
 import './screens/tabs_screen.dart';
 import './screens/note_details_screen.dart';
 import './screens/notes_list_screen.dart';
@@ -33,6 +40,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => ToDos(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(),
         ),
       ],
       child: MaterialApp(
