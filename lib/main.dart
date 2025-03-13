@@ -1,6 +1,8 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import './firebase_options.dart';
 import './themes/light_theme.dart';
 import './themes/dark_theme.dart';
 import './providers/notes.dart';
@@ -10,7 +12,14 @@ import './screens/note_details_screen.dart';
 import './screens/notes_list_screen.dart';
 import './screens/todos_list_screen.dart';
 
-void main() => runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
