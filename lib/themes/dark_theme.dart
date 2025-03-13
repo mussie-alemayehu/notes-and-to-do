@@ -19,7 +19,9 @@ ThemeData darkTheme = ThemeData(
   colorScheme: ColorScheme.dark(
     surface: Colors.black,
     primary: Colors.grey.shade900,
+    onPrimary: Colors.white70,
     secondary: Colors.grey.shade800,
+    onSecondary: Colors.white,
     tertiary: const Color.fromARGB(128, 81, 255, 75),
   ),
   checkboxTheme: const CheckboxThemeData(

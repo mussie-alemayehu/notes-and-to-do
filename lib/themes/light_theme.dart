@@ -18,7 +18,9 @@ ThemeData lightTheme = ThemeData(
   colorScheme: ColorScheme.light(
     surface: Colors.white,
     primary: Colors.grey.shade100,
+    onPrimary: Colors.black54,
     secondary: Colors.grey.shade300,
+    onSecondary: Colors.black,
     tertiary: const Color.fromARGB(128, 5, 157, 0),
   ),
   checkboxTheme: const CheckboxThemeData(
