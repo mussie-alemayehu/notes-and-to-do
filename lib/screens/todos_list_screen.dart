@@ -153,11 +153,9 @@ class ToDosListScreen extends StatelessWidget {
                   child: SingleChildScrollView(
                     child: Column(
                       children: [
-                        ...incompleteToDos
-                            .map(
-                              (todo) => ToDoListItem(todo),
-                            )
-                            .toList(),
+                        ...incompleteToDos.map(
+                          (todo) => ToDoListItem(todo),
+                        ),
                       ],
                     ),
                   ),
@@ -169,11 +167,9 @@ class ToDosListScreen extends StatelessWidget {
                     child: SingleChildScrollView(
                       child: Column(
                         children: [
-                          ...completedToDos
-                              .map(
-                                (todo) => ToDoListItem(todo, isCompleted: true),
-                              )
-                              .toList(),
+                          ...completedToDos.map(
+                            (todo) => ToDoListItem(todo, isCompleted: true),
+                          ),
                         ],
                       ),
                     ),

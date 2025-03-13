@@ -25,9 +25,9 @@ class DBHelper {
       onCreate: (db, version) {
         type == Type.note
             ? db.execute(
-                'CREATE TABLE notes (id iNTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, content TEXT, lastEdited TEXT)')
+                'CREATE TABLE notes (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, content TEXT, lastEdited TEXT)')
             : db.execute(
-                'CREATE TABLE todos (id iNTEGER PRIMARY KEY AUTOINCREMENT, action TEXT, addedOn TEXT, isDone BOOL)');
+                'CREATE TABLE todos (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT, addedOn TEXT, isDone BOOL)');
       },
     );
   }
@@ -55,10 +55,12 @@ class DBHelper {
   static Future<void> updateNote(Note note) async {
     final db = await _database(Type.note);
     final id = int.parse(note.id);
-    await db.execute('UPDATE notes SET title = \'${note.title}\', '
-        'content = \'${note.content}\', '
-        'lastEdited = \'${note.lastEdited.toIso8601String()}\' '
-        'WHERE id = $id');
+    await db.execute(
+      'UPDATE notes SET title = \'${note.title}\', '
+      'content = \'${note.content}\', '
+      'lastEdited = \'${note.lastEdited.toIso8601String()}\' '
+      'WHERE id = $id',
+    );
   }
 
   // to fetch to-dos from the database when the app starts
@@ -71,8 +73,11 @@ class DBHelper {
   // to add to-dos to the database
   static Future<void> addToDo(ToDo todo) async {
     final db = await _database(Type.todo);
-    db.execute('INSERT INTO todos (action, addedOn, isDone) '
-        'VALUES (\'${todo.action}\', \'${todo.addedOn.toIso8601String()}\', \'${todo.isDone}\')');
+    db.execute(
+      'INSERT INTO todos (action, addedOn, isDone) '
+      'VALUES (\'${todo.action}\', \'${todo.addedOn.toIso8601String()}\','
+      ' \'${todo.isDone}\')',
+    );
   }
 
   // to toggle to-dos between completed and incomplete

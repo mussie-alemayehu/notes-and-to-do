@@ -16,13 +16,13 @@ ThemeData lightTheme = ThemeData(
     elevation: 0,
   ),
   colorScheme: ColorScheme.light(
-    background: Colors.white,
+    surface: Colors.white,
     primary: Colors.grey.shade100,
     secondary: Colors.grey.shade300,
     tertiary: const Color.fromARGB(128, 5, 157, 0),
   ),
   checkboxTheme: const CheckboxThemeData(
-    checkColor: MaterialStatePropertyAll<Color>(
+    checkColor: WidgetStatePropertyAll<Color>(
       Colors.black,
     ),
   ),

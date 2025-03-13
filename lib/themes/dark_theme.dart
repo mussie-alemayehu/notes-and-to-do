@@ -17,13 +17,13 @@ ThemeData darkTheme = ThemeData(
   ),
   textTheme: textTheme,
   colorScheme: ColorScheme.dark(
-    background: Colors.black,
+    surface: Colors.black,
     primary: Colors.grey.shade900,
     secondary: Colors.grey.shade800,
     tertiary: const Color.fromARGB(128, 81, 255, 75),
   ),
   checkboxTheme: const CheckboxThemeData(
-    checkColor: MaterialStatePropertyAll<Color>(
+    checkColor: WidgetStatePropertyAll<Color>(
       Colors.white,
     ),
   ),
