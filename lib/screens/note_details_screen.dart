@@ -118,7 +118,7 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
                   style: Theme.of(context).textTheme.bodyMedium,
                   maxLength: 65535,
                   minLines: 50,
-                  maxLines: 9999,
+                  maxLines: 999,
                   onChanged: (value) {
                     if (isFirstChange) {
                       setState(() {
@@ -141,12 +141,11 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
                     IconButton(
                       onPressed: () async {
                         await notesData.deleteNoteWithId(existingNote!.id);
-                        // Navigator.of(context).pop();
                         popScreen();
                       },
                       icon: Icon(
                         Icons.delete,
-                        color: Theme.of(context).colorScheme.tertiary,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                       tooltip: 'Delete Note',
                     )

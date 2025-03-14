@@ -18,6 +18,8 @@ class ToDoListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -48,8 +50,12 @@ class ToDoListItem extends StatelessWidget {
             child: Text(
               todo.action,
               style: todo.isDone
-                  ? Theme.of(context).textTheme.labelMedium
-                  : Theme.of(context).textTheme.bodyMedium,
+                  ? Theme.of(context).textTheme.labelMedium!.copyWith(
+                        color: primary,
+                      )
+                  : Theme.of(context).textTheme.bodyMedium!.copyWith(
+                        color: primary,
+                      ),
             ),
           ),
         ],

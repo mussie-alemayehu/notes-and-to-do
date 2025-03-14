@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import './text_theme.dart';
 
 ThemeData lightTheme = ThemeData(
+  brightness: Brightness.light,
   appBarTheme: const AppBarTheme(
     systemOverlayStyle: SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -16,12 +17,12 @@ ThemeData lightTheme = ThemeData(
     elevation: 0,
   ),
   colorScheme: ColorScheme.light(
-    surface: Colors.white,
-    primary: Colors.grey.shade100,
-    onPrimary: Colors.black54,
-    secondary: Colors.grey.shade300,
-    onSecondary: Colors.black,
-    tertiary: const Color.fromARGB(128, 5, 157, 0),
+    surface: Color(0xFFF5F5F5),
+    primary: Color(0xFF3700B3),
+    onPrimary: Color(0xFF873AF3),
+    secondary: Color(0xFF4ABBEF),
+    onSecondary: Color(0xFF0277BD),
+    tertiary: Color(0xFF484948),
   ),
   checkboxTheme: const CheckboxThemeData(
     checkColor: WidgetStatePropertyAll<Color>(

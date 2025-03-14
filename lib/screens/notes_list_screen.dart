@@ -75,14 +75,16 @@ class _NotesListState extends State<NotesListScreen> {
             }
           }),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Theme.of(context).colorScheme.tertiary,
         onPressed: () {
           Navigator.of(context).pushNamed(
             NoteDetailsScreen.routeName,
             arguments: true,
           );
         },
-        child: const Icon(Icons.add),
+        child: Icon(
+          Icons.add,
+          color: Theme.of(context).colorScheme.surface,
+        ),
       ),
     );
   }

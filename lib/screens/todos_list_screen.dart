@@ -180,7 +180,6 @@ class ToDosListScreen extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Theme.of(context).colorScheme.tertiary,
         tooltip: 'Add new task',
         onPressed: () async {
           final newAction = await _showModalBottomSheet(context);

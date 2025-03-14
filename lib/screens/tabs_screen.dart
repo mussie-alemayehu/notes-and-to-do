@@ -27,8 +27,8 @@ class _TabScreenState extends State<TabsScreen> {
           });
         },
         currentIndex: _selectedIndex,
-        unselectedItemColor: Theme.of(context).colorScheme.secondary,
-        selectedItemColor: Theme.of(context).colorScheme.tertiary,
+        unselectedItemColor: Theme.of(context).colorScheme.tertiary,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
         items: [
           BottomNavigationBarItem(
             icon: const Icon(Icons.notes),

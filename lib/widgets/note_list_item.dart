@@ -29,6 +29,8 @@ class NoteListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+
     return Card(
       color: Theme.of(context).colorScheme.secondary,
       margin: const EdgeInsets.all(8),
@@ -40,20 +42,26 @@ class NoteListItem extends StatelessWidget {
             // display the title of the note
             Text(
               title,
-              style: Theme.of(context).textTheme.headlineMedium,
+              style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                    color: primary,
+                  ),
             ),
             const SizedBox(height: 10),
             // display a maximum of 3 lines of the content of the note
             Text(
               content,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                    color: primary,
+                  ),
               maxLines: 3,
             ),
             const SizedBox(height: 10),
             // display a user-readable format of the date
             Text(
               'Last edited: $_readableDate',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                    color: primary,
+                  ),
             ),
           ],
         ),

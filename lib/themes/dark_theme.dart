@@ -1,11 +1,10 @@
-// specification of the colors in dark theme
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import './text_theme.dart';
 
 ThemeData darkTheme = ThemeData(
+  brightness: Brightness.dark,
   appBarTheme: const AppBarTheme(
     systemOverlayStyle: SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -17,12 +16,12 @@ ThemeData darkTheme = ThemeData(
   ),
   textTheme: textTheme,
   colorScheme: ColorScheme.dark(
-    surface: Colors.black,
-    primary: Colors.grey.shade900,
-    onPrimary: Colors.white70,
-    secondary: Colors.grey.shade800,
-    onSecondary: Colors.white,
-    tertiary: const Color.fromARGB(128, 81, 255, 75),
+    surface: Color(0xFF121212),
+    primary: Color(0xFF2A6A98),
+    onPrimary: Color(0xFF3700B3),
+    secondary: Color(0xFF001C2A),
+    onSecondary: Color(0xFF018786),
+    tertiary: Color(0xFFA7B6B2),
   ),
   checkboxTheme: const CheckboxThemeData(
     checkColor: WidgetStatePropertyAll<Color>(
