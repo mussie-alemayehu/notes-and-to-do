@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -10,7 +11,6 @@ import './themes/dark_theme.dart';
 
 // providers
 import './providers/notes.dart';
-import './providers/auth.dart';
 import './providers/to_dos.dart';
 
 // screens
@@ -43,18 +43,20 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => ToDos(),
         ),
-        ChangeNotifierProvider(
-          create: (_) => AuthProvider(),
-        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Notes',
         theme: lightTheme,
         darkTheme: darkTheme,
-        home: Consumer<AuthProvider>(
-          builder: (context, auth, _) {
-            return auth.user == null ? LoginScreen() : TabsScreen();
+        home: StreamBuilder(
+          stream: FirebaseAuth.instance.userChanges(),
+          builder: (ctx, snapshot) {
+            if (snapshot.data != null) {
+              return TabsScreen();
+            } else {
+              return LoginScreen();
+            }
           },
         ),
         routes: {

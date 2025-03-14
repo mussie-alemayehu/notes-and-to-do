@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:notes/screens/login_screen.dart';
-import 'package:provider/provider.dart';
 
 import '../providers/auth.dart';
 
@@ -20,7 +19,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   void _signUp() async {
     setState(() => isLoading = true);
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final auth = AuthServices();
+
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     final errorMessage = await auth.signUp(
@@ -29,7 +29,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
 
     if (errorMessage != null) {
-      scaffoldMessenger.showSnackBar(SnackBar(content: Text(errorMessage)));
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
     }
     setState(() => isLoading = false);
   }

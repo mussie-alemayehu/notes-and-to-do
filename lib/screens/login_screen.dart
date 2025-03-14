@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import './signup_screen.dart';
 import '../widgets/custom_text_field.dart';
@@ -22,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _login() async {
     setState(() => isLoading = true);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final auth = AuthServices();
     final errorMessage = await auth.signIn(
       _emailController.text,
       _passwordController.text,
@@ -38,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _signInWithGoogle() async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final auth = AuthServices();
     final errorMessage = await auth.signInWithGoogle();
 
     if (errorMessage != null) {
@@ -77,7 +76,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: _login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.secondary,
-                      foregroundColor: Theme.of(context).colorScheme.tertiary,
+                      foregroundColor:
+                          Theme.of(context).colorScheme.onSecondary,
                     ),
                     child: Text('Sign In'),
                   ),
@@ -85,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: _signInWithGoogle,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.secondary,
-                foregroundColor: Theme.of(context).colorScheme.tertiary,
+                foregroundColor: Theme.of(context).colorScheme.onSecondary,
               ),
               child: Text('Sign In with Google'),
             ),
