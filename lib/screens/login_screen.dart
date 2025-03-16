@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import './signup_screen.dart';
 import '../widgets/custom_text_field.dart';
-import '../providers/auth.dart';
+import '../services/auth.dart';
 
 class LoginScreen extends StatefulWidget {
   static const routeName = '/login';

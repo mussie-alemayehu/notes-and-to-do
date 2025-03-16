@@ -26,66 +26,46 @@ class _NotesListState extends State<NotesListScreen> {
   @override
   Widget build(BuildContext context) {
     final notesData = Provider.of<Notes>(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Notes',
-          style: Theme.of(context).textTheme.headlineLarge,
-        ),
-      ),
-      body: FutureBuilder(
-          future: notesData.fetchNotesData(),
-          builder: (ctx, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(
-                child: CircularProgressIndicator(
-                    color: Theme.of(context).primaryColor),
+    return FutureBuilder(
+        future: notesData.fetchNotesData(),
+        builder: (ctx, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: CircularProgressIndicator(
+                  color: Theme.of(context).primaryColor),
+            );
+          } else {
+            notes = notesData.notes;
+            if (notes == null) {
+              return const Center(
+                child: Text(
+                    'No data found for your notes, please restart the app.'),
               );
-            } else {
-              notes = notesData.notes;
-              if (notes == null) {
-                return const Center(
-                  child: Text(
-                      'No data found for your notes, please restart the app.'),
-                );
-              }
-              return notes!.isEmpty
-                  ? const Center(
-                      child: Text('No notes added yet, start adding some.'),
-                    )
-                  : ListView.builder(
-                      itemCount: notes!.length,
-                      itemBuilder: (ctx, index) {
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).pushNamed(
-                              NoteDetailsScreen.routeName,
-                              arguments: notes![index],
-                            );
-                          },
-                          child: NoteListItem(
-                            key: ValueKey(notes![index].id),
-                            title: notes![index].title,
-                            content: notes![index].content,
-                            lastEdited: notes![index].lastEdited,
-                          ),
-                        );
-                      },
-                    );
             }
-          }),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).pushNamed(
-            NoteDetailsScreen.routeName,
-            arguments: true,
-          );
-        },
-        child: Icon(
-          Icons.add,
-          color: Theme.of(context).colorScheme.surface,
-        ),
-      ),
-    );
+            return notes!.isEmpty
+                ? const Center(
+                    child: Text('No notes added yet, start adding some.'),
+                  )
+                : ListView.builder(
+                    itemCount: notes!.length,
+                    itemBuilder: (ctx, index) {
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pushNamed(
+                            NoteDetailsScreen.routeName,
+                            arguments: notes![index],
+                          );
+                        },
+                        child: NoteListItem(
+                          key: ValueKey(notes![index].id),
+                          title: notes![index].title,
+                          content: notes![index].content,
+                          lastEdited: notes![index].lastEdited,
+                        ),
+                      );
+                    },
+                  );
+          }
+        });
   }
 }
