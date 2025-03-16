@@ -14,8 +14,7 @@ import './providers/notes.dart';
 import './providers/to_dos.dart';
 
 // screens
-import './screens/signup_screen.dart';
-import './screens/login_screen.dart';
+import 'screens/auth_screen.dart';
 import './screens/tabs_screen.dart';
 import './screens/note_details_screen.dart';
 import './screens/notes_list_screen.dart';
@@ -55,13 +54,12 @@ class MyApp extends StatelessWidget {
             if (snapshot.data != null) {
               return TabsScreen();
             } else {
-              return LoginScreen();
+              return AuthScreen();
             }
           },
         ),
         routes: {
-          LoginScreen.routeName: (_) => const LoginScreen(),
-          SignUpScreen.routeName: (_) => const SignUpScreen(),
+          AuthScreen.routeName: (_) => const AuthScreen(),
           TabsScreen.routeName: (_) => const TabsScreen(),
           NotesListScreen.routeName: (_) => const NotesListScreen(),
           NoteDetailsScreen.routeName: (_) => const NoteDetailsScreen(),
