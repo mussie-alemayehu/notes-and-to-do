@@ -1,9 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../screens/notes_list_screen.dart';
 import '../screens/todos_list_screen.dart';
 import '../providers/to_dos.dart';
+import '../services/auth.dart';
 import '../models.dart';
 import './note_details_screen.dart';
 
@@ -81,7 +83,97 @@ class _TabScreenState extends State<TabsScreen> {
     final todosData = Provider.of<ToDos>(context);
     List<ToDo> completedToDos = [];
 
+    final userEmail = FirebaseAuth.instance.currentUser!.email;
+
     return Scaffold(
+      drawer: Drawer(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    child: Icon(
+                      Icons.person,
+                      size: 40,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Welcome!',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                  ),
+                  if (userEmail != null)
+                    Text(
+                      userEmail,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                    ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.notes,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: const Text('Notes'),
+              onTap: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  _selectedIndex = 0;
+                });
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.task_alt,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: const Text('To-Dos'),
+              onTap: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  _selectedIndex = 1;
+                });
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: Icon(
+                Icons.logout,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              title: const Text('Logout'),
+              onTap: () async {
+                Navigator.of(context).pop();
+                final showSnackBar = ScaffoldMessenger.of(context).showSnackBar;
+                final colorScheme = Theme.of(context).colorScheme;
+
+                await AuthServices().signOut();
+                showSnackBar(
+                  SnackBar(
+                    content: const Text('Logged out!'),
+                    backgroundColor: colorScheme.primary,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
       appBar: AppBar(
         title: Text(
           (_selectedIndex == 0) ? 'Notes' : 'To-Dos',

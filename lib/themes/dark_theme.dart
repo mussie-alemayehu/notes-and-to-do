@@ -18,7 +18,7 @@ ThemeData darkTheme = ThemeData(
   colorScheme: ColorScheme.dark(
     surface: Color(0xFF121212),
     primary: Color(0xFF2A6A98),
-    onPrimary: Color(0xFF3700B3),
+    onPrimary: Color(0xFFECE6E6),
     secondary: Color(0xFF001C2A),
     onSecondary: Color(0xFF018786),
     tertiary: Color(0xFFA7B6B2),
