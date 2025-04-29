@@ -202,4 +202,105 @@ class DBHelper {
   }
 
   // --- Sync Service ---
+
+  /// Method to permanently delete a record after it's synced (used by sync service)
+  static Future<void> permanentDeleteItem(Type type, String localId) async {
+    final db = await _database(type);
+    final table = type == Type.note ? 'notes' : 'todos';
+
+    await db.delete(
+      table,
+      where: 'id = ?',
+      whereArgs: [localId],
+    );
+  }
+
+  /// Method to update an item's Firebase ID and set status to synced (used by sync service)
+  static Future<int> updateItemFirebaseIdAndStatus(
+    Type type,
+    String localId,
+    String firebaseId,
+  ) async {
+    final db = await _database(type);
+    final table = type == Type.note ? 'notes' : 'todos';
+
+    return await db.update(
+      table,
+      {
+        'firebaseId': firebaseId,
+        'syncStatus': 'synced',
+        // clientTimestamp is not updated here, only on local edits
+      },
+      where: 'id = ?',
+      whereArgs: [localId],
+    );
+  }
+
+  /// Method to update a local item with changes pulled from Firebase (used by sync service)
+  static Future<int> updateItemFromFirebase(
+    Type type,
+    Map<String, dynamic> firebaseData,
+  ) async {
+    final db = await _database(type);
+    final table = type == Type.note ? 'notes' : 'todos';
+
+    // Ensure the data map includes the firebaseId and sets syncStatus to synced
+    firebaseData['syncStatus'] = 'synced';
+    // Note: clientTimestamp in the local DB might differ from a timestamp in firebaseData.
+    // The sync logic in the sync service decides which version wins based on timestamps *before* calling this.
+    // We overwrite the local clientTimestamp when applying the synced version.
+    firebaseData['clientTimestamp'] = DateTime.now()
+        .millisecondsSinceEpoch; // Or use a timestamp from firebaseData if appropriate for the model
+
+    return await db.update(
+      table,
+      firebaseData,
+      where: 'firebaseId = ?', // Match using firebaseId
+      whereArgs: [firebaseData['firebaseId']],
+    );
+  }
+
+  /// Method to add an item pulled from Firebase that doesn't exist locally (used by sync service)
+  static Future<int> insertItemFromFirebase(
+      Type type, Map<String, dynamic> firebaseData) async {
+    final db = await _database(type);
+    final table = type == Type.note ? 'notes' : 'todos';
+    // Ensure the data map includes the firebaseId and sets syncStatus to synced
+    firebaseData['syncStatus'] = 'synced';
+    firebaseData['clientTimestamp'] = DateTime.now()
+        .millisecondsSinceEpoch; // Or use a timestamp from firebaseData
+
+    return await db.insert(
+      table,
+      firebaseData,
+      conflictAlgorithm: ConflictAlgorithm
+          .ignore, // Ignore if an item with the same firebaseId somehow exists
+    );
+  }
+
+  /// Method to fetch all items that are not synced (used by sync service to push)
+  static Future<List<Map<String, dynamic>>> fetchPendingItems(Type type) async {
+    final db = await _database(type);
+    final table = type == Type.note ? 'notes' : 'todos';
+
+    return await db.query(
+      table,
+      where: 'syncStatus != ?',
+      whereArgs: ['synced'],
+    );
+  }
+
+  /// Method to update the sync status of an item (e.g., from 'pending_create' to 'synced', or to 'sync_error')
+  static Future<int> updateItemSyncStatus(
+      Type type, String localId, String status) async {
+    final db = await _database(type);
+    final table = type == Type.note ? 'notes' : 'todos';
+
+    return await db.update(
+      table,
+      {'syncStatus': status},
+      where: 'id = ?',
+      whereArgs: [localId],
+    );
+  }
 }
