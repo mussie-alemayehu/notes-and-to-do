@@ -1,5 +1,3 @@
-// provides to-dos to the whole app during runtime
-
 import 'package:flutter/material.dart';
 
 import '../db_helper.dart';
@@ -9,46 +7,101 @@ class ToDos with ChangeNotifier {
   // to keep track of all to-dos in the app
   List<ToDo> _todos = [];
 
-  // returns the list of completed to-dos
+  /// returns the list of completed to-dos (filtering out pending deletes)
   List<ToDo> get completedToDos {
-    final list = _todos.reversed.where((todo) => todo.isDone == true).toList();
+    final list = _todos
+        .where((todo) =>
+            todo.isDone == true && todo.syncStatus != 'pending_delete')
+        .toList()
+        .reversed
+        .toList();
     return list;
   }
 
-  // returns the list of incomplete to-dos
+  /// returns the list of incomplete to-dos (filtering out pending deletes)
   List<ToDo> get incompleteToDos {
-    final list = _todos.reversed.where((todo) => todo.isDone == false).toList();
+    final list = _todos
+        .where((todo) =>
+            todo.isDone == false && todo.syncStatus != 'pending_delete')
+        .toList()
+        .reversed
+        .toList();
     return list;
   }
 
-  // to initialize the _todos array when the app starts
+  /// to initialize the [_todos] array when the app starts or needs refreshing
   Future<void> fetchToDosData() async {
-    final list = await DBHelper.fetchToDos();
-    _todos = list.map((todo) {
-      return ToDo(
-        id: todo['id'].toString(),
-        action: todo['action'],
-        addedOn: DateTime.parse(todo['addedOn']),
-        isDone: todo['isDone'] == 'true' ? true : false,
-      );
-    }).toList();
+    // DBHelper.fetchToDos now returns List<ToDo> directly
+    _todos = await DBHelper.fetchToDos();
+    notifyListeners(); // Notify listeners after fetching data
   }
 
-  // to toggle to-dos between completed and incomplete
+  /// to toggle to-dos between completed and incomplete and mark for sync
   void toggleCompletion(ToDo todo) {
-    DBHelper.toggleToDoCompletion(todo);
-    notifyListeners();
+    // Find the todo in the local list to update its status immediately in the UI
+    final index = _todos.indexWhere((t) => t.id == todo.id);
+    if (index != -1) {
+      // Update the local model's isDone state, sync status, and timestamp
+      _todos[index].isDone = !_todos[index].isDone;
+      _todos[index].syncStatus = 'pending_update';
+      _todos[index].clientTimestamp = DateTime.now().millisecondsSinceEpoch;
+
+      DBHelper.toggleToDoCompletion(_todos[index]);
+
+      notifyListeners();
+    }
   }
 
-  // to add to-dos to the database by accessing the addToDo() method in DBHelper class
+  /// to add to-dos to the database and mark for sync
   Future<void> addToDo(ToDo todo) async {
-    await DBHelper.addToDo(todo);
+    final newToDo = ToDo(
+      action: todo.action,
+      addedOn: DateTime.now(),
+      isDone: todo.isDone,
+      syncStatus: 'pending_create',
+      clientTimestamp: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    try {
+      // DBHelper.addToDo now handles inserting the map and returns the local ID
+      final localId = await DBHelper.addToDo(newToDo);
+      newToDo.id = localId.toString();
+
+      _todos.add(newToDo);
+    } catch (error) {
+      return;
+    }
+
     notifyListeners();
   }
 
-  // to delete completed to-dos from the database by accessing the deleteCompletedToDos() method in DBHelper class
+  /// to delete completed to-dos from the database (soft delete for syncing)
   Future<void> deleteCompletedToDos() async {
-    DBHelper.deleteCompletedToDos();
+    // Update the local list immediately to reflect the pending deletion in the UI
+    // Mark all completed todos as pending_delete in the local list
+    for (var todo in _todos.where((t) => t.isDone).toList()) {
+      // Create a list copy to modify while iterating
+      final index = _todos.indexWhere((t) => t.id == todo.id);
+
+      if (index != -1) {
+        _todos[index].syncStatus = 'pending_delete';
+        _todos[index].clientTimestamp = DateTime.now().millisecondsSinceEpoch;
+      }
+    }
+
+    // Call the DBHelper method to mark for deletion (soft delete)
+    await DBHelper.deleteCompletedToDos();
+
+    notifyListeners();
+  }
+
+  /// Method to update the provider's list when data is synced from Firebase
+  /// This method will be called by the SyncService
+  void updateToDosFromSync(List<ToDo> syncedToDos) {
+    // This is a simplified approach. A more robust method would merge changes.
+    // For now, we'll just replace the local list with the synced data.
+    // This assumes the SyncService has already merged/resolved conflicts in the DB.
+    _todos = syncedToDos;
     notifyListeners();
   }
 }
