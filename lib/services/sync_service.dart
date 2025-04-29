@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../db_helper.dart';
 import '../models.dart';
-
+import '../providers/notes.dart';
+import '../providers/to_dos.dart';
 import './firestore_services.dart';
 
 class SyncService {
@@ -15,6 +17,10 @@ class SyncService {
   StreamSubscription? _todosStreamSubscription;
   User? _currentUser;
 
+  // References to the providers
+  Notes? _notesProvider;
+  ToDos? _todosProvider;
+
   // Private constructor for singleton pattern (optional but common for services)
   SyncService._privateConstructor();
 
@@ -22,6 +28,18 @@ class SyncService {
 
   factory SyncService() {
     return _instance;
+  }
+
+  // Method to set the provider references
+  void setProviders(Notes notesProvider, ToDos todosProvider) {
+    _notesProvider = notesProvider;
+    _todosProvider = todosProvider;
+    print('SyncService providers set.');
+    // If a user is already logged in when providers are set, start sync
+
+    if (_currentUser != null) {
+      _startSync();
+    }
   }
 
   // Initialize the sync service
@@ -44,6 +62,11 @@ class SyncService {
 
   // Start the synchronization process
   void _startSync() {
+    if (_notesProvider == null || _todosProvider == null) {
+      print('Cannot start sync: Providers not set.');
+      return;
+    }
+
     // Ensure previous subscriptions are cancelled before starting new ones
     _stopSync();
 
@@ -94,25 +117,45 @@ class SyncService {
 
   // Start listening for real-time changes from Firestore
   void _startFirestoreListeners() {
-    if (_currentUser == null) return;
+    if (_currentUser == null ||
+        _notesProvider == null ||
+        _todosProvider == null) {
+      return;
+    }
 
     // Listen to notes changes
-    _notesStreamSubscription = _firestoreService.streamNotes().listen((notes) {
-      print('Received ${notes.length} notes from Firestore stream.');
-      _handleIncomingNotes(notes);
-    }, onError: (error) {
-      print('Error in Firestore notes stream: $error');
-      // Handle stream errors (e.g., permission denied, network issues)
-    });
+    _notesStreamSubscription = _firestoreService.streamNotes().listen(
+      (notes) async {
+        print('Received ${notes.length} notes from Firestore stream.');
+        await _handleIncomingNotes(notes);
+        // After handling incoming notes and updating DB, notify the provider
+        final updatedLocalNotes =
+            await DBHelper.fetchNotes(); // Fetch from local DB after updates
+        _notesProvider!.updateNotesFromSync(
+            updatedLocalNotes); // Update the provider's state
+      },
+      onError: (error) {
+        print('Error in Firestore notes stream: $error');
+        // Handle stream errors (e.g., permission denied, network issues)
+      },
+    );
 
     // Listen to todos changes
-    _todosStreamSubscription = _firestoreService.streamToDos().listen((todos) {
-      print('Received ${todos.length} todos from Firestore stream.');
-      _handleIncomingToDos(todos);
-    }, onError: (error) {
-      print('Error in Firestore todos stream: $error');
-      // Handle stream errors
-    });
+    _todosStreamSubscription = _firestoreService.streamToDos().listen(
+      (todos) async {
+        print('Received ${todos.length} todos from Firestore stream.');
+        await _handleIncomingToDos(todos);
+        // After handling incoming todos and updating DB, notify the provider
+        final updatedLocalToDos =
+            await DBHelper.fetchToDos(); // Fetch from local DB after updates
+        _todosProvider!.updateToDosFromSync(
+            updatedLocalToDos); // Update the provider's state
+      },
+      onError: (error) {
+        print('Error in Firestore todos stream: $error');
+        // Handle stream errors
+      },
+    );
   }
 
   // Handle incoming notes from the Firestore stream
@@ -209,41 +252,39 @@ class SyncService {
 
   // Perform an initial pull of all data from Firestore
   Future<void> _initialPull() async {
-    if (_currentUser == null) return;
-
+    if (_currentUser == null ||
+        _notesProvider == null ||
+        _todosProvider == null) return;
     print('Performing initial data pull from Firestore...');
     try {
       final firebaseNotes = await _firestoreService.getAllNotes();
       final firebaseToDos = await _firestoreService.getAllToDos();
 
-      // For initial pull, clear local data
-      await DBHelper.clearAllData(Type.note);
-      await DBHelper.clearAllData(Type.todo);
+      // For initial pull, iterate through Firebase data and merge with local
+      // This logic is similar to handling stream updates but for the full dataset.
+      // We need to fetch local data first to compare.
+      final localNotes = await DBHelper.fetchNotes();
+      final localToDos = await DBHelper.fetchToDos();
 
-      final existingNotes = await DBHelper.fetchNotes();
-
-      // Insert/update local database with data from Firebase
+      // Process notes from Firebase
       for (final note in firebaseNotes) {
-        // Check if item already exists locally by firebaseId
-        final existingNote = existingNotes.firstWhere(
-          (localNote) => localNote.firebaseId == note.firebaseId,
-          orElse: () => Note(
-            title: '',
-            content: '',
-            lastEdited: DateTime.now(),
-            clientTimestamp: 0,
-            syncStatus: 'synced',
-          ),
-        );
+        final existingNote = localNotes.firstWhere(
+            (localNote) => localNote.firebaseId == note.firebaseId,
+            orElse: () => Note(
+                title: '',
+                content: '',
+                lastEdited: DateTime.now(),
+                clientTimestamp: 0,
+                syncStatus: 'synced') // Dummy
+            );
 
-        if (existingNote.id == null) {
-          // Item doesn't exist locally, insert it
+        if (existingNote.id == null ||
+            existingNote.syncStatus == 'pending_delete') {
+          // Item doesn't exist locally or was marked for delete, insert it
           print('Initial pull: Inserting note ${note.firebaseId}');
           await DBHelper.insertItemFromFirebase(Type.note, note.toMap());
         } else {
-          // Item exists, update it (applying conflict resolution if necessary,
-          // though for initial pull, Firebase usually wins unless local has pending changes)
-          // Simple approach: if local has pending changes, keep them. Otherwise, update from Firebase.
+          // Item exists, update it if Firebase version is newer or local is synced
           if (existingNote.syncStatus == 'synced' ||
               existingNote.clientTimestamp <= note.clientTimestamp) {
             print(
@@ -256,20 +297,19 @@ class SyncService {
         }
       }
 
-      final existingToDos = await DBHelper.fetchToDos();
-
+      // Process todos from Firebase
       for (final todo in firebaseToDos) {
-        final existingToDo = existingToDos.firstWhere(
-          (localToDo) => localToDo.firebaseId == todo.firebaseId,
-          orElse: () => ToDo(
-            action: '',
-            addedOn: DateTime.now(),
-            clientTimestamp: 0,
-            syncStatus: 'synced',
-          ),
-        );
+        final existingToDo = localToDos.firstWhere(
+            (localToDo) => localToDo.firebaseId == todo.firebaseId,
+            orElse: () => ToDo(
+                action: '',
+                addedOn: DateTime.now(),
+                clientTimestamp: 0,
+                syncStatus: 'synced') // Dummy
+            );
 
-        if (existingToDo.id == null) {
+        if (existingToDo.id == null ||
+            existingToDo.syncStatus == 'pending_delete') {
           print('Initial pull: Inserting todo ${todo.firebaseId}');
           await DBHelper.insertItemFromFirebase(Type.todo, todo.toMap());
         } else {
@@ -285,22 +325,34 @@ class SyncService {
         }
       }
 
-      print('Initial data pull complete.');
+      // TODO: Handle deletions during initial pull. Compare fetched firebaseIds with local firebaseIds.
+      // Any local item with a firebaseId that is NOT in the firebase lists should be permanently deleted
+      // UNLESS it has a pending change (create, update, delete). If it has a pending delete,
+      // and is not in Firebase, it means the delete didn't sync, or it was already deleted.
+      // This requires careful logic.
+
+      print('Initial data pull complete. Updating providers.');
+      // After initial pull and DB updates, update the providers
+      final updatedLocalNotes = await DBHelper.fetchNotes();
+      _notesProvider!.updateNotesFromSync(updatedLocalNotes);
+
+      final updatedLocalToDos = await DBHelper.fetchToDos();
+      _todosProvider!.updateToDosFromSync(updatedLocalToDos);
     } catch (e) {
       print('Error during initial data pull: $e');
-      // Handle errors (e.g., display a message to the user)
     }
   }
 
   // Push pending local changes to Firestore
   Future<void> _pushPendingChanges() async {
-    if (_currentUser == null) {
-      print('No user logged in, cannot push changes.');
+    if (_currentUser == null ||
+        _notesProvider == null ||
+        _todosProvider == null) {
+      print('Cannot push changes: User not logged in or providers not set.');
       return;
     }
-
     final connectivityResult = await _connectivity.checkConnectivity();
-    if (connectivityResult.contains(ConnectivityResult.none)) {
+    if (connectivityResult == ConnectivityResult.none) {
       print('Device is offline, cannot push changes.');
       return;
     }
@@ -308,15 +360,15 @@ class SyncService {
     print('Attempting to push pending changes to Firestore...');
 
     try {
-      final pendingItems = await DBHelper.fetchPendingItems(Type.note);
-      pendingItems.addAll(await DBHelper.fetchPendingItems(Type.todo));
+      final pendingItemsMaps = await DBHelper.fetchPendingItems(Type.note);
+      pendingItemsMaps.addAll(await DBHelper.fetchPendingItems(Type.todo));
 
-      if (pendingItems.isEmpty) {
+      if (pendingItemsMaps.isEmpty) {
         print('No pending changes to push.');
         return;
       }
 
-      for (final itemMap in pendingItems) {
+      for (final itemMap in pendingItemsMaps) {
         final syncStatus = itemMap['syncStatus'];
         final localId = itemMap['id']?.toString();
         final firebaseId = itemMap['firebaseId']?.toString();
@@ -330,11 +382,10 @@ class SyncService {
         try {
           if (syncStatus == 'pending_create') {
             print('Pushing new item (create): $itemMap');
-            // Convert map back to model to use toFirestoreMap
+            // Convert map back to model
             final dynamic item = itemType == Type.note
                 ? Note.fromMap(itemMap)
                 : ToDo.fromMap(itemMap);
-
             final newFirebaseId = itemType == Type.note
                 ? await _firestoreService.addNote(item as Note)
                 : await _firestoreService.addToDo(item as ToDo);
@@ -345,28 +396,37 @@ class SyncService {
                   itemType, localId, newFirebaseId);
               print(
                   'Successfully pushed and updated local item with firebaseId: $newFirebaseId');
+              // After updating the DB, refresh the provider's state
+              final updatedLocalItems = itemType == Type.note
+                  ? await DBHelper.fetchNotes()
+                  : await DBHelper.fetchToDos();
+              if (itemType == Type.note) {
+                _notesProvider!
+                    .updateNotesFromSync(updatedLocalItems as List<Note>);
+              } else {
+                _todosProvider!
+                    .updateToDosFromSync(updatedLocalItems as List<ToDo>);
+              }
             } else {
               // Handle failure to add to Firestore
               print('Failed to push new item (create) to Firestore.');
-
               await DBHelper.updateItemSyncStatus(
                   itemType, localId, 'sync_error');
+              // Optionally update provider state to reflect error
             }
           } else if (syncStatus == 'pending_update') {
             if (firebaseId == null) {
               print(
                   'Skipping pending update for item with no firebaseId: $itemMap');
               await DBHelper.updateItemSyncStatus(
-                  itemType, localId, 'sync_error'); // Mark as error
+                  itemType, localId, 'sync_error');
               continue;
             }
-
             print('Pushing updated item: $itemMap');
-            // Convert map back to model to use toFirestoreMap
+            // Convert map back to model
             final dynamic item = itemType == Type.note
                 ? Note.fromMap(itemMap)
                 : ToDo.fromMap(itemMap);
-
             final success = itemType == Type.note
                 ? await _firestoreService.updateNote(item as Note)
                 : await _firestoreService.updateToDo(item as ToDo);
@@ -375,11 +435,26 @@ class SyncService {
               // Set status to synced
               await DBHelper.updateItemSyncStatus(itemType, localId, 'synced');
               print('Successfully pushed update for item: $firebaseId');
+
+              // After updating the DB, refresh the provider's state
+              final updatedLocalItems = itemType == Type.note
+                  ? await DBHelper.fetchNotes()
+                  : await DBHelper.fetchToDos();
+              if (itemType == Type.note) {
+                _notesProvider!
+                    .updateNotesFromSync(updatedLocalItems as List<Note>);
+              } else {
+                _todosProvider!
+                    .updateToDosFromSync(updatedLocalItems as List<ToDo>);
+              }
             } else {
               // Handle failure to update in Firestore
               print('Failed to push update for item: $firebaseId');
               await DBHelper.updateItemSyncStatus(
-                  itemType, localId, 'sync_error');
+                itemType,
+                localId,
+                'sync_error',
+              );
             }
           } else if (syncStatus == 'pending_delete') {
             if (firebaseId == null) {
@@ -389,16 +464,41 @@ class SyncService {
               await DBHelper.permanentDeleteItem(itemType, localId);
               print(
                   'Permanently deleted local item with no firebaseId: $localId');
+
+              // After deleting from DB, refresh the provider's state
+              final updatedLocalItems = itemType == Type.note
+                  ? await DBHelper.fetchNotes()
+                  : await DBHelper.fetchToDos();
+              if (itemType == Type.note) {
+                _notesProvider!
+                    .updateNotesFromSync(updatedLocalItems as List<Note>);
+              } else {
+                _todosProvider!
+                    .updateToDosFromSync(updatedLocalItems as List<ToDo>);
+              }
               continue; // Move to next item
             }
             print('Pushing deleted item: $itemMap');
-            final success = await _firestoreService.deleteNote(
-                firebaseId); // Assuming deleteNote/deleteToDo takes firebaseId
+            final success = itemType == Type.note
+                ? await _firestoreService.deleteNote(firebaseId)
+                : await _firestoreService.deleteToDo(firebaseId);
+
             if (success) {
               // Permanently delete local item after successful cloud deletion
               await DBHelper.permanentDeleteItem(itemType, localId);
               print(
                   'Successfully pushed deletion for item and deleted locally: $firebaseId');
+              // After deleting from DB, refresh the provider's state
+              final updatedLocalItems = itemType == Type.note
+                  ? await DBHelper.fetchNotes()
+                  : await DBHelper.fetchToDos();
+              if (itemType == Type.note) {
+                _notesProvider!
+                    .updateNotesFromSync(updatedLocalItems as List<Note>);
+              } else {
+                _todosProvider!
+                    .updateToDosFromSync(updatedLocalItems as List<ToDo>);
+              }
             } else {
               // Handle failure to delete in Firestore
               print('Failed to push deletion for item: $firebaseId');
@@ -409,14 +509,12 @@ class SyncService {
         } catch (e) {
           print(
               'Error processing pending item $localId (firebaseId: $firebaseId): $e');
-          await DBHelper.updateItemSyncStatus(
-              itemType, localId, 'sync_error'); // Mark as error
+          await DBHelper.updateItemSyncStatus(itemType, localId, 'sync_error');
         }
       }
       print('Finished attempting to push pending changes.');
     } catch (e) {
       print('Error fetching pending items from local DB: $e');
-      // Handle errors
     }
   }
 
