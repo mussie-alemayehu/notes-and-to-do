@@ -299,4 +299,15 @@ class DBHelper {
       whereArgs: [localId],
     );
   }
+
+  // --- Clear Methods ---
+
+  /// clear all data [Type] in local storage
+  static Future<void> clearAllData(Type type) async {
+    final db = await _database(type);
+
+    await db.delete(
+      type == Type.note ? 'notes' : 'todos',
+    );
+  }
 }
