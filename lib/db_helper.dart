@@ -1,7 +1,6 @@
 import 'package:sqflite/sqlite_api.dart';
 import 'package:sqflite/sqflite.dart' as sql;
 import 'package:path/path.dart' as path;
-import 'package:uuid/uuid.dart';
 
 import './models.dart';
 
@@ -9,9 +8,6 @@ enum Type {
   note,
   todo,
 }
-
-// Initialize Uuid generator
-const uuid = Uuid();
 
 class DBHelper {
   // to open the database
