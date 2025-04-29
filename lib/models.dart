@@ -1,23 +1,23 @@
 // the model for notes used in the entire app
 class Note {
-  String?
-      id; // Changed to nullable String? for SQLite primary key (AUTOINCREMENT)
-  String? firebaseId; // Add firebaseId - nullable until synced
+  // for SQLite primary key (AUTOINCREMENT)
+  String? id;
+  String? firebaseId; // nullable until synced
   String title;
   String content;
   DateTime lastEdited;
   String
-      syncStatus; // Add syncStatus (e.g., 'synced', 'pending_create', 'pending_update', 'pending_delete')
-  int clientTimestamp; // Add clientTimestamp (milliseconds since epoch)
+      syncStatus; // (e.g., 'synced', 'pending_create', 'pending_update', 'pending_delete')
+  int clientTimestamp; // (milliseconds since epoch)
 
   Note({
-    this.id, // Made id nullable
-    this.firebaseId, // Made firebaseId nullable
+    this.id,
+    this.firebaseId,
     required this.title,
     required this.content,
     required this.lastEdited,
-    this.syncStatus = 'synced', // Default status
-    required this.clientTimestamp, // Requires a timestamp on creation/update
+    this.syncStatus = 'synced',
+    required this.clientTimestamp,
   });
 
   // Helper to create a Note from a database Map (from SQLite)
@@ -41,8 +41,7 @@ class Note {
       'firebaseId': firebaseId,
       'title': title,
       'content': content,
-      'lastEdited':
-          lastEdited.toIso8601String(), // Store DateTime as ISO8601 string
+      'lastEdited': lastEdited.toIso8601String(),
       'syncStatus': syncStatus,
       'clientTimestamp': clientTimestamp,
     };
@@ -55,7 +54,7 @@ class Note {
       'content': content,
       'lastEdited': lastEdited, // Firestore can handle DateTime directly
       // Add a server timestamp here during actual upload in the sync service
-      // 'updatedAt': FieldValue.serverTimestamp()
+      // 'updatedAt': FieldValue.serverTimestamp(),
       'clientTimestamp':
           clientTimestamp, // Keep client timestamp for conflict resolution logic
       // syncStatus is local state, not needed in Firestore document
@@ -65,23 +64,22 @@ class Note {
 
 // the model for to-dos used in the entire app
 class ToDo {
-  String?
-      id; // Changed to nullable String? for SQLite primary key (AUTOINCREMENT)
-  String? firebaseId; // Add firebaseId - nullable until synced
+  String? id; // for SQLite primary key (AUTOINCREMENT)
+  String? firebaseId; // nullable until synced
   String action;
   DateTime addedOn;
   bool isDone;
-  String syncStatus; // Add syncStatus
-  int clientTimestamp; // Add clientTimestamp
+  String syncStatus;
+  int clientTimestamp;
 
   ToDo({
-    this.id, // Made id nullable
-    this.firebaseId, // Made firebaseId nullable
+    this.id,
+    this.firebaseId,
     required this.action,
     required this.addedOn,
     this.isDone = false,
-    this.syncStatus = 'synced', // Default status
-    required this.clientTimestamp, // Requires a timestamp on creation/update
+    this.syncStatus = 'synced',
+    required this.clientTimestamp,
   });
 
   // Helper to create a ToDo from a database Map (from SQLite)
@@ -119,7 +117,7 @@ class ToDo {
       'addedOn': addedOn, // Firestore can handle DateTime directly
       'isDone': isDone, // Firestore can handle boolean directly
       // Add a server timestamp here during actual upload in the sync service
-      // 'updatedAt': FieldValue.serverTimestamp()
+      // 'updatedAt': FieldValue.serverTimestamp(),
       'clientTimestamp':
           clientTimestamp, // Keep client timestamp for conflict resolution logic
       // syncStatus is local state, not needed in Firestore document
