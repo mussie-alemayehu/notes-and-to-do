@@ -9,6 +9,9 @@ import './firebase_options.dart';
 import './themes/light_theme.dart';
 import './themes/dark_theme.dart';
 
+// services
+import './services/sync_service.dart';
+
 // providers
 import './providers/notes.dart';
 import './providers/to_dos.dart';
@@ -25,6 +28,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  SyncService().initialize();
 
   runApp(const MyApp());
 }
