@@ -21,6 +21,9 @@ class SyncService {
   Notes? _notesProvider;
   ToDos? _todosProvider;
 
+  // Flag to prevent concurrent executions of _pushPendingChanges
+  bool _isPushingChanges = false;
+
   // Private constructor for singleton pattern (optional but common for services)
   SyncService._privateConstructor();
 
@@ -47,7 +50,7 @@ class SyncService {
     // Listen for authentication state changes
     FirebaseAuth.instance.userChanges().listen((user) {
       _currentUser = user;
-      if (_currentUser != null) {
+      if (_currentUser == null) {
         print('User logged in: ${_currentUser!.uid}. Starting sync setup.');
         _startSync(); // Start sync when user logs in
       } else {
@@ -127,11 +130,13 @@ class SyncService {
       (notes) async {
         print('Received ${notes.length} notes from Firestore stream.');
         await _handleIncomingNotes(notes);
+
         // After handling incoming notes and updating DB, notify the provider
-        final updatedLocalNotes =
-            await DBHelper.fetchNotes(); // Fetch from local DB after updates
-        _notesProvider!.updateNotesFromSync(
-            updatedLocalNotes); // Update the provider's state
+        // Fetch from local DB after updates
+        final updatedLocalNotes = await DBHelper.fetchNotes();
+
+        // Update the provider's state
+        _notesProvider!.updateNotesFromSync(updatedLocalNotes);
       },
       onError: (error) {
         print('Error in Firestore notes stream: $error');
@@ -144,11 +149,13 @@ class SyncService {
       (todos) async {
         print('Received ${todos.length} todos from Firestore stream.');
         await _handleIncomingToDos(todos);
+
         // After handling incoming todos and updating DB, notify the provider
-        final updatedLocalToDos =
-            await DBHelper.fetchToDos(); // Fetch from local DB after updates
-        _todosProvider!.updateToDosFromSync(
-            updatedLocalToDos); // Update the provider's state
+        // Fetch from local DB after updates
+        final updatedLocalToDos = await DBHelper.fetchToDos();
+
+        // Update the provider's state
+        _todosProvider!.updateToDosFromSync(updatedLocalToDos);
       },
       onError: (error) {
         print('Error in Firestore todos stream: $error');
@@ -253,7 +260,9 @@ class SyncService {
   Future<void> _initialPull() async {
     if (_currentUser == null ||
         _notesProvider == null ||
-        _todosProvider == null) return;
+        _todosProvider == null) {
+      return;
+    }
     print('Performing initial data pull from Firestore...');
     try {
       final firebaseNotes = await _firestoreService.getAllNotes();
@@ -268,14 +277,15 @@ class SyncService {
       // Process notes from Firebase
       for (final note in firebaseNotes) {
         final existingNote = localNotes.firstWhere(
-            (localNote) => localNote.firebaseId == note.firebaseId,
-            orElse: () => Note(
-                title: '',
-                content: '',
-                lastEdited: DateTime.now(),
-                clientTimestamp: 0,
-                syncStatus: 'synced') // Dummy
-            );
+          (localNote) => localNote.firebaseId == note.firebaseId,
+          orElse: () => Note(
+            title: '',
+            content: '',
+            lastEdited: DateTime.now(),
+            clientTimestamp: 0,
+            syncStatus: 'synced',
+          ),
+        );
 
         if (existingNote.id == null ||
             existingNote.syncStatus == 'pending_delete') {
@@ -299,13 +309,14 @@ class SyncService {
       // Process todos from Firebase
       for (final todo in firebaseToDos) {
         final existingToDo = localToDos.firstWhere(
-            (localToDo) => localToDo.firebaseId == todo.firebaseId,
-            orElse: () => ToDo(
-                action: '',
-                addedOn: DateTime.now(),
-                clientTimestamp: 0,
-                syncStatus: 'synced') // Dummy
-            );
+          (localToDo) => localToDo.firebaseId == todo.firebaseId,
+          orElse: () => ToDo(
+            action: '',
+            addedOn: DateTime.now(),
+            clientTimestamp: 0,
+            syncStatus: 'synced',
+          ),
+        );
 
         if (existingToDo.id == null ||
             existingToDo.syncStatus == 'pending_delete') {
@@ -344,15 +355,26 @@ class SyncService {
 
   // Push pending local changes to Firestore
   Future<void> _pushPendingChanges() async {
+    // Check if already pushing changes
+    if (_isPushingChanges) {
+      print('Already pushing changes, skipping duplicate call.');
+      return;
+    }
+
+    // Set flag to prevent concurrent executions
+    _isPushingChanges = true;
+
     if (_currentUser == null ||
         _notesProvider == null ||
         _todosProvider == null) {
+      _isPushingChanges = false;
       print('Cannot push changes: User not logged in or providers not set.');
       return;
     }
 
     final connectivityResult = await _connectivity.checkConnectivity();
     if (connectivityResult.contains(ConnectivityResult.none)) {
+      _isPushingChanges = false;
       print('Device is offline, cannot push changes.');
       return;
     }
@@ -367,6 +389,7 @@ class SyncService {
 
       if (pendingItemsMaps.isEmpty) {
         print('No pending changes to push.');
+        _isPushingChanges = false;
         return;
       }
 
@@ -517,6 +540,9 @@ class SyncService {
       print('Finished attempting to push pending changes.');
     } catch (e) {
       print('Error fetching pending items from local DB: $e');
+    } finally {
+      // Reset flag when done, regardless of success or failure
+      _isPushingChanges = false;
     }
   }
 
