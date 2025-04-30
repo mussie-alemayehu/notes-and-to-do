@@ -162,11 +162,6 @@ class DBHelper {
   /// to toggle to-dos between completed and incomplete (update)
   static Future<int> toggleToDoCompletion(ToDo todo) async {
     final db = await _database(Type.todo);
-    // Update the local model's isDone state and timestamp
-    todo.isDone = !todo.isDone;
-    todo.clientTimestamp = DateTime.now().millisecondsSinceEpoch;
-    // Mark as pending update
-    todo.syncStatus = 'pending_update';
 
     // Use the toMap helper
     final Map<String, dynamic> data = todo.toMap();

@@ -35,12 +35,14 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
         Navigator.of(context).pop();
       };
       notesData = Provider.of<Notes>(context, listen: false);
+
       try {
         isNew = (ModalRoute.of(context)!.settings.arguments as bool?) ?? false;
       } catch (error) {
         existingNote = ModalRoute.of(context)!.settings.arguments as Note;
         isNew = false;
       }
+
       titleController.text = isNew ? '' : existingNote!.title;
       contentController.text = isNew ? '' : existingNote!.content;
     }
@@ -49,6 +51,7 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
   Future<void> _saveChanges() async {
     final newNote = Note(
       id: isNew ? DateTime.now().toString() : existingNote!.id,
+      firebaseId: isNew ? null : existingNote!.firebaseId,
       content: contentController.text,
       title: titleController.text,
       clientTimestamp: DateTime.now().millisecondsSinceEpoch,
@@ -60,7 +63,7 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
     } else {
       await notesData.updateNote(newNote);
     }
-    // Navigator.of(context).pop();
+
     popScreen();
   }
 

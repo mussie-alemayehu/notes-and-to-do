@@ -81,7 +81,7 @@ class _TabScreenState extends State<TabsScreen> {
   Widget build(BuildContext context) {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final todosData = Provider.of<ToDos>(context);
-    List<ToDo> completedToDos = [];
+    List<ToDo> completedToDos = todosData.completedToDos;
 
     final userEmail = FirebaseAuth.instance.currentUser!.email;
 

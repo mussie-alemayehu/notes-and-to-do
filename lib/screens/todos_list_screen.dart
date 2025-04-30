@@ -61,6 +61,10 @@ class _ToDosListScreenState extends State<ToDosListScreen> {
     final completedToDos = todosData.completedToDos;
     final incompleteToDos = todosData.incompleteToDos;
 
+    print(
+      'Complete: ${completedToDos.length}, Incomplete: ${incompleteToDos.length}',
+    );
+
     return _isLoading
         ? Center(
             child: CircularProgressIndicator(

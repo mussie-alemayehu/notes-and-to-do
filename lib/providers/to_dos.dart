@@ -37,16 +37,18 @@ class ToDos with ChangeNotifier {
   }
 
   /// to toggle to-dos between completed and incomplete and mark for sync
-  void toggleCompletion(ToDo todo) {
+  void toggleCompletion(ToDo todo) async {
     // Find the todo in the local list to update its status immediately in the UI
     final index = _todos.indexWhere((t) => t.id == todo.id);
     if (index != -1) {
-      // Update the local model's isDone state, sync status, and timestamp
-      _todos[index].isDone = !_todos[index].isDone;
-      _todos[index].syncStatus = 'pending_update';
-      _todos[index].clientTimestamp = DateTime.now().millisecondsSinceEpoch;
+      var selectedToDo = _todos[index];
 
-      DBHelper.toggleToDoCompletion(_todos[index]);
+      // Update the local model's isDone state, sync status, and timestamp
+      selectedToDo.isDone = !selectedToDo.isDone;
+      selectedToDo.syncStatus = 'pending_update';
+      selectedToDo.clientTimestamp = DateTime.now().millisecondsSinceEpoch;
+
+      DBHelper.toggleToDoCompletion(selectedToDo);
 
       notifyListeners();
     }
