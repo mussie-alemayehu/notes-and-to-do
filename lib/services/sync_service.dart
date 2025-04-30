@@ -164,15 +164,15 @@ class SyncService {
 
   // Handle incoming notes from the Firestore stream
   Future<void> _handleIncomingNotes(List<Note> firebaseNotes) async {
+    // Fetch local notes once before processing incoming notes
     final localNotes = await DBHelper.fetchNotes();
 
     for (final firebaseNote in firebaseNotes) {
-      // Find the corresponding local note by firebaseId
-      final localNote = localNotes.firstWhere(
+      // Try to find a local item matching by firebaseId first
+      final existingLocalNoteByFirebaseId = localNotes.firstWhere(
         (note) => note.firebaseId == firebaseNote.firebaseId,
         orElse: () => Note(
-          // Create a dummy note if not found locally to simplify logic
-          // This dummy note will have a null id and syncStatus 'synced'
+          // Dummy Note if not found
           title: '',
           content: '',
           lastEdited: DateTime.now(),
@@ -181,50 +181,99 @@ class SyncService {
         ),
       );
 
-      // Conflict Resolution (Last Write Wins based on clientTimestamp)
-      // If local item exists AND has pending changes AND local timestamp is newer
-      if (localNote.id != null &&
-          localNote.syncStatus != 'synced' &&
-          localNote.clientTimestamp > firebaseNote.clientTimestamp) {
-        print(
-            'Conflict detected for note ${localNote.id}. Local version wins.');
-        // Local version wins, do nothing. The local pending change will be pushed later.
-      } else {
-        // No conflict, or Firestore version wins, or item is new from Firebase
-        if (localNote.id == null) {
-          // Item is new from Firebase, insert it locally
-          print('Inserting new note from Firebase: ${firebaseNote.firebaseId}');
-          await DBHelper.insertItemFromFirebase(
-            Type.note,
-            firebaseNote.toMap(),
-          );
-        } else {
-          // Item exists locally, update it with Firebase data
+      if (existingLocalNoteByFirebaseId.id != null) {
+        // Found a local item with the same firebaseId
+        // Now, apply conflict resolution
+        if (existingLocalNoteByFirebaseId.syncStatus != 'synced' &&
+            existingLocalNoteByFirebaseId.clientTimestamp >
+                firebaseNote.clientTimestamp) {
           print(
-              'Updating local note ${localNote.id} from Firebase: ${firebaseNote.firebaseId}');
+              'Conflict detected for note ${existingLocalNoteByFirebaseId.id}. Local version wins.');
+          // Local version has pending changes and is newer, do nothing.
+          // The local pending change will be pushed later.
+        } else {
+          // Firestore version wins (newer or local is synced), update the local item
+          print(
+              'Updating local note ${existingLocalNoteByFirebaseId.id} from Firebase: ${firebaseNote.firebaseId}');
+
           await DBHelper.updateItemFromFirebase(
             Type.note,
             firebaseNote.toMap(),
           );
         }
+      } else {
+        // No local item found with this firebaseId.
+        // Check if there's a local item pending creation with the same clientTimestamp
+        // This handles the case where the item was created offline on this device.
+        final pendingCreateLocalNote = localNotes.firstWhere(
+          (note) =>
+              note.syncStatus == 'pending_create' &&
+              note.clientTimestamp == firebaseNote.clientTimestamp,
+          orElse: () => Note(
+            // Dummy Note if not found
+            title: '',
+            content: '',
+            lastEdited: DateTime.now(),
+            clientTimestamp: 0,
+            syncStatus: 'synced',
+          ),
+        );
+
+        if (pendingCreateLocalNote.id != null) {
+          // Found a local item pending creation with matching timestamp.
+          // This is the same item created offline on this device.
+          // Update it with the firebaseId received from Firestore.
+          print(
+              'Updating local pending_create note ${pendingCreateLocalNote.id} with firebaseId: ${firebaseNote.firebaseId}');
+          await DBHelper.updateItemFirebaseIdAndStatus(
+            Type.note,
+            pendingCreateLocalNote.id!,
+            firebaseNote.firebaseId!,
+          );
+        } else {
+          // Item is new from Firebase and doesn't exist locally, insert it.
+          print('Inserting new note from Firebase: ${firebaseNote.firebaseId}');
+          await DBHelper.insertItemFromFirebase(
+              Type.note, firebaseNote.toMap());
+        }
       }
     }
 
-    // TODO: Handle deletions from Firebase - The stream doesn't directly tell you what was deleted.
-    // You might need a separate mechanism or compare the full list from Firebase
-    // with the local list to find items that exist locally but are missing in Firebase.
-    // This is a more advanced sync pattern. For now, we only handle additions/updates.
+    // --- Handle Deletions from Firebase ---
+    // This requires comparing the current local items with firebaseIds
+    // against the list of items received from Firebase.
+    final localNotesWithFirebaseId =
+        localNotes.where((note) => note.firebaseId != null).toList();
+    final firebaseNoteIds =
+        firebaseNotes.map((note) => note.firebaseId).toSet();
+
+    for (final localNote in localNotesWithFirebaseId) {
+      // If a local item has a firebaseId but is NOT in the incoming firebase list,
+      // it means it was deleted in Firebase by another client.
+      // We should permanently delete it locally, UNLESS it has pending local changes.
+      if (!firebaseNoteIds.contains(localNote.firebaseId) &&
+          localNote.syncStatus == 'synced') {
+        print(
+            'Deleting local note ${localNote.id} (firebaseId: ${localNote.firebaseId}) deleted in Firebase.');
+        await DBHelper.permanentDeleteItem(Type.note, localNote.id!);
+      }
+      // Note: If a local item has pending changes (update/delete) and is not in the firebase list,
+      // we assume the local change should take precedence. The pending delete will be pushed later,
+      // and the pending update might result in a re-creation in Firebase depending on logic.
+    }
   }
 
   // Handle incoming todos from the Firestore stream
   Future<void> _handleIncomingToDos(List<ToDo> firebaseToDos) async {
+    // Fetch local todos once before processing incoming todos
     final localToDos = await DBHelper.fetchToDos();
 
-    // Similar logic as _handleIncomingNotes
     for (final firebaseToDo in firebaseToDos) {
-      final localToDo = localToDos.firstWhere(
+      // Try to find a local item matching by firebaseId first
+      final existingLocalToDoByFirebaseId = localToDos.firstWhere(
         (todo) => todo.firebaseId == firebaseToDo.firebaseId,
         orElse: () => ToDo(
+          // Dummy ToDo if not found
           action: '',
           addedOn: DateTime.now(),
           clientTimestamp: 0,
@@ -232,30 +281,70 @@ class SyncService {
         ),
       );
 
-      // Conflict Resolution (Last Write Wins)
-      if (localToDo.id != null &&
-          localToDo.syncStatus != 'synced' &&
-          localToDo.clientTimestamp > firebaseToDo.clientTimestamp) {
-        print(
-            'Conflict detected for todo ${localToDo.id}. Local version wins.');
-        // Local version wins
+      if (existingLocalToDoByFirebaseId.id != null) {
+        // Found a local item with the same firebaseId
+        // Apply conflict resolution
+        if (existingLocalToDoByFirebaseId.syncStatus != 'synced' &&
+            existingLocalToDoByFirebaseId.clientTimestamp >
+                firebaseToDo.clientTimestamp) {
+          print(
+              'Conflict detected for todo ${existingLocalToDoByFirebaseId.id}. Local version wins.');
+          // Local version wins
+        } else {
+          // Firestore version wins, update the local item
+          print(
+              'Updating local todo ${existingLocalToDoByFirebaseId.id} from Firebase: ${firebaseToDo.firebaseId}');
+          await DBHelper.updateItemFromFirebase(
+              Type.todo, firebaseToDo.toMap());
+        }
       } else {
-        // No conflict, or Firebase version wins, or item is new
-        if (localToDo.id == null) {
+        // No local item found with this firebaseId.
+        // Check if there's a local item pending creation with the same clientTimestamp
+        final pendingCreateLocalToDo = localToDos.firstWhere(
+          (todo) =>
+              todo.syncStatus == 'pending_create' &&
+              todo.clientTimestamp == firebaseToDo.clientTimestamp,
+          orElse: () => ToDo(
+            // Dummy ToDo if not found
+            action: '',
+            addedOn: DateTime.now(),
+            clientTimestamp: 0,
+            syncStatus: 'synced',
+          ),
+        );
+
+        if (pendingCreateLocalToDo.id != null) {
+          // Found a local item pending creation with matching timestamp.
+          // Update it with the firebaseId received from Firestore.
+          print(
+              'Updating local pending_create todo ${pendingCreateLocalToDo.id} with firebaseId: ${firebaseToDo.firebaseId}');
+          await DBHelper.updateItemFirebaseIdAndStatus(
+              Type.todo, pendingCreateLocalToDo.id!, firebaseToDo.firebaseId!);
+        } else {
+          // Item is new from Firebase and doesn't exist locally, insert it.
           print('Inserting new todo from Firebase: ${firebaseToDo.firebaseId}');
           await DBHelper.insertItemFromFirebase(
             Type.todo,
             firebaseToDo.toMap(),
           );
-        } else {
-          print(
-              'Updating local todo ${localToDo.id} from Firebase: ${firebaseToDo.firebaseId}');
-          await DBHelper.updateItemFromFirebase(
-              Type.todo, firebaseToDo.toMap());
         }
       }
     }
-    // TODO: Handle deletions from Firebase
+
+    // --- Handle Deletions from Firebase ---
+    final localToDosWithFirebaseId =
+        localToDos.where((todo) => todo.firebaseId != null).toList();
+    final firebaseToDoIds =
+        firebaseToDos.map((todo) => todo.firebaseId).toSet();
+
+    for (final localToDo in localToDosWithFirebaseId) {
+      if (!firebaseToDoIds.contains(localToDo.firebaseId) &&
+          localToDo.syncStatus == 'synced') {
+        print(
+            'Deleting local todo ${localToDo.id} (firebaseId: ${localToDo.firebaseId}) deleted in Firebase.');
+        await DBHelper.permanentDeleteItem(Type.todo, localToDo.id!);
+      }
+    }
   }
 
   // Perform an initial pull of all data from Firestore
@@ -438,8 +527,6 @@ class SyncService {
               //       itemType, localId, 'sync_error');
               //   // Optionally update provider state to reflect error
             }
-
-            print('here');
 
             // After updating the DB, refresh the provider's state
             final updatedLocalItems = itemType == Type.note
