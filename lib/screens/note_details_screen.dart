@@ -51,6 +51,7 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
       id: isNew ? DateTime.now().toString() : existingNote!.id,
       content: contentController.text,
       title: titleController.text,
+      clientTimestamp: DateTime.now().millisecondsSinceEpoch,
       lastEdited: DateTime.now(),
     );
 
@@ -140,7 +141,9 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
                   children: [
                     IconButton(
                       onPressed: () async {
-                        await notesData.deleteNoteWithId(existingNote!.id);
+                        await notesData.deleteNoteWithId(
+                          existingNote!.id ?? '',
+                        );
                         popScreen();
                       },
                       icon: Icon(

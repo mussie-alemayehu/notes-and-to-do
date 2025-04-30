@@ -91,8 +91,7 @@ class SyncService {
     _connectivitySubscription = null;
     _notesStreamSubscription = null;
     _todosStreamSubscription = null;
-    _currentUser = null;
-    print('Sync service stopped.');
+    print('Sync services stopped.');
   }
 
   // Check connectivity and trigger sync push if online
@@ -351,8 +350,9 @@ class SyncService {
       print('Cannot push changes: User not logged in or providers not set.');
       return;
     }
+
     final connectivityResult = await _connectivity.checkConnectivity();
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.contains(ConnectivityResult.none)) {
       print('Device is offline, cannot push changes.');
       return;
     }
@@ -360,8 +360,10 @@ class SyncService {
     print('Attempting to push pending changes to Firestore...');
 
     try {
-      final pendingItemsMaps = await DBHelper.fetchPendingItems(Type.note);
-      pendingItemsMaps.addAll(await DBHelper.fetchPendingItems(Type.todo));
+      final pendingNotesMaps = await DBHelper.fetchPendingItems(Type.note);
+      final pendingTodosMaps = await DBHelper.fetchPendingItems(Type.todo);
+
+      final pendingItemsMaps = [...pendingNotesMaps, ...pendingTodosMaps];
 
       if (pendingItemsMaps.isEmpty) {
         print('No pending changes to push.');

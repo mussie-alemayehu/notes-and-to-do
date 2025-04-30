@@ -251,6 +251,7 @@ class _TabScreenState extends State<TabsScreen> {
                     id: DateTime.now().toString(),
                     action: newAction,
                     addedOn: DateTime.now(),
+                    clientTimestamp: DateTime.now().millisecondsSinceEpoch,
                   ),
                 );
               },

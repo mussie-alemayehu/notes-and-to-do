@@ -48,29 +48,40 @@ class MyApp extends StatelessWidget {
           create: (_) => ToDos(),
         ),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Notes',
-        theme: lightTheme,
-        darkTheme: darkTheme,
-        home: StreamBuilder(
-          stream: FirebaseAuth.instance.userChanges(),
-          builder: (ctx, snapshot) {
-            if (snapshot.data != null) {
-              return TabsScreen();
-            } else {
-              return AuthScreen();
-            }
+      child: Builder(builder: (context) {
+        final notesProvider = Provider.of<Notes>(context, listen: false);
+        final todosProvider = Provider.of<ToDos>(context, listen: false);
+
+        SyncService().setProviders(notesProvider, todosProvider);
+
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Notes',
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          home: StreamBuilder(
+            stream: FirebaseAuth.instance.userChanges(),
+            builder: (ctx, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()));
+              }
+              if (snapshot.data != null) {
+                return TabsScreen();
+              } else {
+                return AuthScreen();
+              }
+            },
+          ),
+          routes: {
+            AuthScreen.routeName: (_) => const AuthScreen(),
+            TabsScreen.routeName: (_) => const TabsScreen(),
+            NotesListScreen.routeName: (_) => const NotesListScreen(),
+            NoteDetailsScreen.routeName: (_) => const NoteDetailsScreen(),
+            ToDosListScreen.routeName: (_) => const ToDosListScreen(),
           },
-        ),
-        routes: {
-          AuthScreen.routeName: (_) => const AuthScreen(),
-          TabsScreen.routeName: (_) => const TabsScreen(),
-          NotesListScreen.routeName: (_) => const NotesListScreen(),
-          NoteDetailsScreen.routeName: (_) => const NoteDetailsScreen(),
-          ToDosListScreen.routeName: (_) => const ToDosListScreen(),
-        },
-      ),
+        );
+      }),
     );
   }
 }
