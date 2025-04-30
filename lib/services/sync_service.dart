@@ -37,10 +37,10 @@ class SyncService {
   void setProviders(Notes notesProvider, ToDos todosProvider) {
     _notesProvider = notesProvider;
     _todosProvider = todosProvider;
-    print('SyncService providers set.');
     // If a user is already logged in when providers are set, start sync
 
     if (_currentUser != null) {
+      print('SyncService providers set, starting sync.');
       _startSync();
     }
   }
@@ -51,10 +51,8 @@ class SyncService {
     FirebaseAuth.instance.userChanges().listen((user) {
       _currentUser = user;
       if (_currentUser == null) {
-        print('User logged in: ${_currentUser!.uid}. Starting sync setup.');
         _startSync(); // Start sync when user logs in
       } else {
-        print('User logged out. Stopping sync.');
         _stopSync(); // Stop sync when user logs out
       }
     });
@@ -173,13 +171,14 @@ class SyncService {
       final localNote = localNotes.firstWhere(
         (note) => note.firebaseId == firebaseNote.firebaseId,
         orElse: () => Note(
-            // Create a dummy note if not found locally to simplify logic
-            // This dummy note will have a null id and syncStatus 'synced'
-            title: '',
-            content: '',
-            lastEdited: DateTime.now(),
-            clientTimestamp: 0,
-            syncStatus: 'synced'),
+          // Create a dummy note if not found locally to simplify logic
+          // This dummy note will have a null id and syncStatus 'synced'
+          title: '',
+          content: '',
+          lastEdited: DateTime.now(),
+          clientTimestamp: 0,
+          syncStatus: 'synced',
+        ),
       );
 
       // Conflict Resolution (Last Write Wins based on clientTimestamp)
@@ -226,10 +225,11 @@ class SyncService {
       final localToDo = localToDos.firstWhere(
         (todo) => todo.firebaseId == firebaseToDo.firebaseId,
         orElse: () => ToDo(
-            action: '',
-            addedOn: DateTime.now(),
-            clientTimestamp: 0,
-            syncStatus: 'synced'),
+          action: '',
+          addedOn: DateTime.now(),
+          clientTimestamp: 0,
+          syncStatus: 'synced',
+        ),
       );
 
       // Conflict Resolution (Last Write Wins)
@@ -244,7 +244,9 @@ class SyncService {
         if (localToDo.id == null) {
           print('Inserting new todo from Firebase: ${firebaseToDo.firebaseId}');
           await DBHelper.insertItemFromFirebase(
-              Type.todo, firebaseToDo.toMap());
+            Type.todo,
+            firebaseToDo.toMap(),
+          );
         } else {
           print(
               'Updating local todo ${localToDo.id} from Firebase: ${firebaseToDo.firebaseId}');
@@ -415,36 +417,50 @@ class SyncService {
                 ? await _firestoreService.addNote(item as Note)
                 : await _firestoreService.addToDo(item as ToDo);
 
+            print('New Firebase ID: $newFirebaseId');
+
             if (newFirebaseId != null) {
               // Update local item with the new firebaseId and set status to synced
-              await DBHelper.updateItemFirebaseIdAndStatus(
-                  itemType, localId, newFirebaseId);
+              final rows = await DBHelper.updateItemFirebaseIdAndStatus(
+                itemType,
+                localId,
+                newFirebaseId,
+              );
+
+              print(rows);
+
               print(
                   'Successfully pushed and updated local item with firebaseId: $newFirebaseId');
-              // After updating the DB, refresh the provider's state
-              final updatedLocalItems = itemType == Type.note
-                  ? await DBHelper.fetchNotes()
-                  : await DBHelper.fetchToDos();
-              if (itemType == Type.note) {
-                _notesProvider!
-                    .updateNotesFromSync(updatedLocalItems as List<Note>);
-              } else {
-                _todosProvider!
-                    .updateToDosFromSync(updatedLocalItems as List<ToDo>);
-              }
+              // } else {
+              //   // Handle failure to add to Firestore
+              //   print('Failed to push new item (create) to Firestore.');
+              //   await DBHelper.updateItemSyncStatus(
+              //       itemType, localId, 'sync_error');
+              //   // Optionally update provider state to reflect error
+            }
+
+            print('here');
+
+            // After updating the DB, refresh the provider's state
+            final updatedLocalItems = itemType == Type.note
+                ? await DBHelper.fetchNotes()
+                : await DBHelper.fetchToDos();
+
+            if (itemType == Type.note) {
+              _notesProvider!.updateNotesFromSync(
+                updatedLocalItems as List<Note>,
+              );
             } else {
-              // Handle failure to add to Firestore
-              print('Failed to push new item (create) to Firestore.');
-              await DBHelper.updateItemSyncStatus(
-                  itemType, localId, 'sync_error');
-              // Optionally update provider state to reflect error
+              _todosProvider!.updateToDosFromSync(
+                updatedLocalItems as List<ToDo>,
+              );
             }
           } else if (syncStatus == 'pending_update') {
             if (firebaseId == null) {
               print(
                   'Skipping pending update for item with no firebaseId: $itemMap');
-              await DBHelper.updateItemSyncStatus(
-                  itemType, localId, 'sync_error');
+              // await DBHelper.updateItemSyncStatus(
+              //     itemType, localId, 'sync_error');
               continue;
             }
             print('Pushing updated item: $itemMap');
@@ -460,26 +476,26 @@ class SyncService {
               // Set status to synced
               await DBHelper.updateItemSyncStatus(itemType, localId, 'synced');
               print('Successfully pushed update for item: $firebaseId');
+              // } else {
+              //   // Handle failure to update in Firestore
+              //   print('Failed to push update for item: $firebaseId');
+              //   await DBHelper.updateItemSyncStatus(
+              //     itemType,
+              //     localId,
+              //     'sync_error',
+              //   );
+            }
 
-              // After updating the DB, refresh the provider's state
-              final updatedLocalItems = itemType == Type.note
-                  ? await DBHelper.fetchNotes()
-                  : await DBHelper.fetchToDos();
-              if (itemType == Type.note) {
-                _notesProvider!
-                    .updateNotesFromSync(updatedLocalItems as List<Note>);
-              } else {
-                _todosProvider!
-                    .updateToDosFromSync(updatedLocalItems as List<ToDo>);
-              }
+            // After updating the DB, refresh the provider's state
+            final updatedLocalItems = itemType == Type.note
+                ? await DBHelper.fetchNotes()
+                : await DBHelper.fetchToDos();
+            if (itemType == Type.note) {
+              _notesProvider!
+                  .updateNotesFromSync(updatedLocalItems as List<Note>);
             } else {
-              // Handle failure to update in Firestore
-              print('Failed to push update for item: $firebaseId');
-              await DBHelper.updateItemSyncStatus(
-                itemType,
-                localId,
-                'sync_error',
-              );
+              _todosProvider!
+                  .updateToDosFromSync(updatedLocalItems as List<ToDo>);
             }
           } else if (syncStatus == 'pending_delete') {
             if (firebaseId == null) {
@@ -501,7 +517,8 @@ class SyncService {
                 _todosProvider!
                     .updateToDosFromSync(updatedLocalItems as List<ToDo>);
               }
-              continue; // Move to next item
+
+              continue;
             }
             print('Pushing deleted item: $itemMap');
             final success = itemType == Type.note
@@ -524,17 +541,18 @@ class SyncService {
                 _todosProvider!
                     .updateToDosFromSync(updatedLocalItems as List<ToDo>);
               }
-            } else {
-              // Handle failure to delete in Firestore
-              print('Failed to push deletion for item: $firebaseId');
-              await DBHelper.updateItemSyncStatus(
-                  itemType, localId, 'sync_error');
+              // }
+              //  else {
+              //   // Handle failure to delete in Firestore
+              //   print('Failed to push deletion for item: $firebaseId');
+              //   await DBHelper.updateItemSyncStatus(
+              //       itemType, localId, 'sync_error');
             }
           }
         } catch (e) {
           print(
               'Error processing pending item $localId (firebaseId: $firebaseId): $e');
-          await DBHelper.updateItemSyncStatus(itemType, localId, 'sync_error');
+          // await DBHelper.updateItemSyncStatus(itemType, localId, 'sync_error');
         }
       }
       print('Finished attempting to push pending changes.');
@@ -549,6 +567,5 @@ class SyncService {
   // Dispose of streams and resources when the service is no longer needed
   void dispose() {
     _stopSync();
-    print('Sync service disposed.');
   }
 }

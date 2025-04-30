@@ -38,6 +38,8 @@ class FirestoreService {
       // Use the toFirestoreMap helper from the Note model
       final docRef = await _userNotesCollection!.add(note.toFirestoreMap());
 
+      print('Document added with ID: ${docRef.id}');
+
       return docRef.id;
     } catch (e) {
       return null;
