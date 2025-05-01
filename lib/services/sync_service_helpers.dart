@@ -247,11 +247,36 @@ class SyncServiceHelpers {
         }
       }
 
-      // TODO: Handle deletions during initial pull. Compare fetched firebaseIds with local firebaseIds.
-      // Any local item with a firebaseId that is NOT in the firebase lists should be permanently deleted
-      // UNLESS it has a pending change (create, update, delete). If it has a pending delete,
-      // and is not in Firebase, it means the delete didn't sync, or it was already deleted.
-      // This requires careful logic.
+      // --- Handle Deletions during initial pull ---
+      // Compare local items with firebaseIds to the fetched firebase lists.
+      final localNotesWithFirebaseId =
+          localNotes.where((note) => note.firebaseId != null).toList();
+      final firebaseNoteIds =
+          firebaseNotes.map((note) => note.firebaseId).toSet();
+      for (final localNote in localNotesWithFirebaseId) {
+        // If a local item has a firebaseId but is NOT in the incoming firebase list,
+        // it means it was deleted in Firebase. Permanently delete locally
+        // UNLESS the local item has pending changes (update/delete).
+        if (!firebaseNoteIds.contains(localNote.firebaseId) &&
+            localNote.syncStatus == 'synced') {
+          await DBHelper.permanentDeleteItem(Type.note, localNote.id!);
+        }
+        // Note: If a local item has pending changes (update/delete) and is not in the firebase list,
+        // we assume the local change should take precedence for now. The pending delete will be pushed later,
+        // and the pending update might result in a re-creation in Firebase depending on your desired logic
+        // for handling updates to items that were deleted remotely.
+      }
+
+      final localToDosWithFirebaseId =
+          localToDos.where((todo) => todo.firebaseId != null).toList();
+      final firebaseToDoIds =
+          firebaseToDos.map((todo) => todo.firebaseId).toSet();
+      for (final localToDo in localToDosWithFirebaseId) {
+        if (!firebaseToDoIds.contains(localToDo.firebaseId) &&
+            localToDo.syncStatus == 'synced') {
+          await DBHelper.permanentDeleteItem(Type.todo, localToDo.id!);
+        }
+      }
 
       // After initial pull and DB updates, update the providers
       final updatedLocalNotes = await DBHelper.fetchNotes();
