@@ -36,37 +36,43 @@ class _TabScreenState extends State<TabsScreen> {
       builder: (ctx) {
         return Container(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 12,
-            top: 12,
-            right: 12,
-            left: 12,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+            top: 20,
+            right: 16,
+            left: 16,
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: TextField(
-                  autofocus: true,
-                  textCapitalization: TextCapitalization.sentences,
-                  cursorColor: Theme.of(context).colorScheme.tertiary,
-                  decoration: const InputDecoration(
-                    hintText: 'Add task.',
-                  ),
-                  onChanged: (value) {
-                    newAction = value;
-                  },
-                ),
+              Text(
+                'Add New Task',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                },
-                child: Text(
-                  'Save',
-                  style:
-                      TextStyle(color: Theme.of(context).colorScheme.tertiary),
-                ),
+              const SizedBox(height: 16),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      autofocus: true,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        hintText: 'Enter your task here...',
+                      ),
+                      onChanged: (value) {
+                        newAction = value;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(ctx).pop(newAction);
+                    },
+                    child: const Text('Save'),
+                  ),
+                ],
               ),
             ],
           ),
@@ -83,7 +89,7 @@ class _TabScreenState extends State<TabsScreen> {
     final todosData = Provider.of<ToDos>(context);
     List<ToDo> completedToDos = todosData.completedToDos;
 
-    final userEmail = FirebaseAuth.instance.currentUser!.email;
+    final userEmail = FirebaseAuth.instance.currentUser?.email;
 
     return Scaffold(
       drawer: Drawer(
@@ -130,6 +136,7 @@ class _TabScreenState extends State<TabsScreen> {
                 color: Theme.of(context).colorScheme.primary,
               ),
               title: const Text('Notes'),
+              selected: _selectedIndex == 0, // Highlight selected item
               onTap: () {
                 Navigator.of(context).pop();
                 setState(() {
@@ -143,6 +150,7 @@ class _TabScreenState extends State<TabsScreen> {
                 color: Theme.of(context).colorScheme.primary,
               ),
               title: const Text('To-Dos'),
+              selected: _selectedIndex == 1, // Highlight selected item
               onTap: () {
                 Navigator.of(context).pop();
                 setState(() {
@@ -177,12 +185,11 @@ class _TabScreenState extends State<TabsScreen> {
       appBar: AppBar(
         title: Text(
           (_selectedIndex == 0) ? 'Notes' : 'To-Dos',
-          style: Theme.of(context).textTheme.headlineLarge,
         ),
         actions: [
           if (_selectedIndex == 1)
             Padding(
-              padding: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.only(right: 16),
               child: IconButton(
                 icon: const Icon(Icons.clear_all),
                 tooltip: 'Clean completed tasks.',
@@ -195,17 +202,46 @@ class _TabScreenState extends State<TabsScreen> {
                             Theme.of(context).colorScheme.secondary,
                         content: Text(
                           'There are no completed tasks yet.',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color:
+                                    Theme.of(context).colorScheme.onSecondary,
+                              ),
                           textAlign: TextAlign.center,
                         ),
                       ),
                     );
                   } else {
                     await todosData.deleteCompletedToDos();
+
+                    scaffoldMessenger.removeCurrentSnackBar();
+                    if (context.mounted) {
+                      scaffoldMessenger.showSnackBar(
+                        // Show success message
+                        SnackBar(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          content: Text(
+                            'Completed tasks cleared!',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimary),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    }
                   }
                 },
               ),
             ),
+          const SizedBox(width: 4),
         ],
       ),
       body: (_selectedIndex == 0)
@@ -218,18 +254,20 @@ class _TabScreenState extends State<TabsScreen> {
           });
         },
         currentIndex: _selectedIndex,
-        unselectedItemColor: Theme.of(context).colorScheme.tertiary,
+        unselectedItemColor:
+            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
         selectedItemColor: Theme.of(context).colorScheme.primary,
-        items: [
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
+        items: const [
           BottomNavigationBarItem(
-            icon: const Icon(Icons.notes),
+            icon: Icon(Icons.notes),
             label: 'Notes',
-            backgroundColor: Theme.of(context).colorScheme.secondary,
           ),
           BottomNavigationBarItem(
-            icon: const Icon(Icons.task_alt),
+            icon: Icon(Icons.task_alt),
             label: 'To-Dos',
-            backgroundColor: Theme.of(context).primaryColor,
           ),
         ],
       ),
@@ -255,11 +293,11 @@ class _TabScreenState extends State<TabsScreen> {
                   ),
                 );
               },
-        child: Icon(
+        child: const Icon(
           Icons.add,
-          color: Theme.of(context).colorScheme.surface,
         ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
