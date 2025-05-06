@@ -9,11 +9,8 @@ class Notes with ChangeNotifier {
 
   List<Note> get notes {
     // Filter out items marked for pending delete so they don't show in the UI immediately
-    return _notes
-        .where((note) => note.syncStatus != 'pending_delete')
-        .toList()
-        .reversed
-        .toList();
+    return _notes.where((note) => note.syncStatus != 'pending_delete').toList()
+      ..sort((a, b) => b.lastEdited.compareTo(a.lastEdited));
   }
 
   /// to initialize the _notes array when the app starts or needs refreshing

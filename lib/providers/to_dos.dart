@@ -13,8 +13,8 @@ class ToDos with ChangeNotifier {
         .where((todo) =>
             todo.isDone == true && todo.syncStatus != 'pending_delete')
         .toList()
-        .reversed
-        .toList();
+      ..sort((a, b) => b.addedOn.compareTo(a.addedOn));
+
     return list;
   }
 

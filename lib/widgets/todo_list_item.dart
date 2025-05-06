@@ -1,7 +1,6 @@
-// this widget will be displayed representing a single note in the ToDosListScreen screen
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../providers/to_dos.dart';
 import '../models.dart';
@@ -18,47 +17,83 @@ class ToDoListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Theme.of(context).colorScheme.secondary,
-      ),
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      padding: EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: isCompleted ? 0 : 4,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          // a check-box to represent the state of the to-do item
-          Checkbox(
-            value: todo.isDone,
-            shape: const CircleBorder(),
-            onChanged: (newValue) {
-              Provider.of<ToDos>(context, listen: false).toggleCompletion(todo);
-            },
-          ),
-          const SizedBox(width: 10),
-          // using a gesture detector to allow toggling when the text part is tapped
-          GestureDetector(
-            onTap: () {
-              Provider.of<ToDos>(context, listen: false).toggleCompletion(todo);
-            },
-            child: Text(
-              todo.action,
-              style: todo.isDone
-                  ? Theme.of(context).textTheme.labelMedium!.copyWith(
-                        color: primary,
-                      )
-                  : Theme.of(context).textTheme.bodyMedium!.copyWith(
-                        color: primary,
-                      ),
+    return Animate(
+      // Animation for state change (e.g., when marking as complete/incomplete)
+      // This will run when the widget is rebuilt with a different `isCompleted` value
+      target: 1, // Animate based on completion state
+      effects: [
+        if (isCompleted) // Apply effects only when completing
+          FadeEffect(duration: 200.ms),
+        ScaleEffect(
+          begin: Offset(1, 1),
+          end: Offset(0.95, 0.95),
+          duration: 200.ms,
+        ),
+        if (!isCompleted) FadeEffect(duration: 200.ms),
+        ScaleEffect(
+          begin: Offset(0.95, 0.95),
+          end: Offset(1, 1),
+          duration: 200.ms,
+        ),
+      ],
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: isCompleted
+              ? colorScheme.surface.withValues(alpha: 0.6)
+              : colorScheme.surface,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isCompleted ? 0.05 : 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: InkWell(
+          onTap: () {
+            Provider.of<ToDos>(context, listen: false).toggleCompletion(todo);
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Checkbox(
+                  value: todo.isDone,
+                  shape: const CircleBorder(),
+                  activeColor: colorScheme.primary,
+                  onChanged: (newValue) {
+                    Provider.of<ToDos>(context, listen: false)
+                        .toggleCompletion(todo);
+                  },
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    todo.action,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: isCompleted
+                              ? colorScheme.onSurface.withValues(alpha: 0.5)
+                              : colorScheme.onSurface,
+                          decoration: isCompleted
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                          fontStyle:
+                              isCompleted ? FontStyle.italic : FontStyle.normal,
+                        ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
