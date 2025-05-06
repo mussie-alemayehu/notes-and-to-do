@@ -15,9 +15,10 @@ import './services/sync_service.dart';
 // providers
 import './providers/notes.dart';
 import './providers/to_dos.dart';
+import './providers/theme_notifier.dart';
 
 // screens
-import 'screens/auth_screen.dart';
+import './screens/auth_screen.dart';
 import './screens/tabs_screen.dart';
 import './screens/note_details_screen.dart';
 import './screens/notes_list_screen.dart';
@@ -47,6 +48,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => ToDos(),
         ),
+        ChangeNotifierProvider(
+          create: (_) => ThemeNotifier(),
+        ),
       ],
       child: Builder(builder: (context) {
         final notesProvider = Provider.of<Notes>(context, listen: false);
@@ -59,6 +63,7 @@ class MyApp extends StatelessWidget {
           title: 'Notes',
           theme: lightTheme,
           darkTheme: darkTheme,
+          themeMode: Provider.of<ThemeNotifier>(context).themeMode,
           home: StreamBuilder(
             stream: FirebaseAuth.instance.userChanges(),
             builder: (ctx, snapshot) {
