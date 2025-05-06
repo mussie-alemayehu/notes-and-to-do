@@ -4,6 +4,7 @@ const Color _lightPrimaryColor = Color(0xFF4CAF50);
 const Color _lightPrimaryVariantColor = Color(0xFF388E3C);
 const Color _lightSecondaryColor = Color(0xFFFFC107);
 const Color _lightSecondaryVariantColor = Color(0xFFFFA000);
+const Color _lightOnSecondaryColor = Colors.black;
 const Color _lightBackgroundColor = Color(0xFFFFFFFF);
 const Color _lightSurfaceColor = Color(0xFFF5F5F5);
 const Color _lightErrorColor = Color(0xFFF44336);
@@ -19,7 +20,7 @@ ThemeData lightTheme = ThemeData(
     surface: _lightSurfaceColor,
     error: _lightErrorColor,
     onPrimary: Colors.white,
-    onSecondary: Colors.black,
+    onSecondary: _lightOnSecondaryColor,
     onSurface: Colors.black87,
     onError: Colors.white,
   ),
@@ -52,8 +53,8 @@ ThemeData lightTheme = ThemeData(
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
-      foregroundColor: _lightColorScheme.onSecondary,
-      backgroundColor: _lightColorScheme.secondary,
+      foregroundColor: _lightOnSecondaryColor,
+      backgroundColor: _lightSecondaryColor,
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
       textStyle: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.w600),
@@ -121,6 +122,3 @@ ThemeData lightTheme = ThemeData(
     margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
   ),
 );
-
-// Helper ColorScheme getter to be used within the theme
-ColorScheme get _lightColorScheme => lightTheme.colorScheme;

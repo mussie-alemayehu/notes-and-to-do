@@ -7,6 +7,7 @@ const Color _darkSecondaryVariantColor = Color(0xFFFFC107);
 const Color _darkBackgroundColor = Color(0xFF1A1A1A);
 const Color _darkSurfaceColor = Color(0xFF2E2E2E);
 const Color _darkErrorColor = Color(0xFFEF9A9A);
+const Color _darkOnSecondaryColor = Colors.black;
 
 // Dark Theme Definition
 ThemeData darkTheme = ThemeData(
@@ -19,7 +20,7 @@ ThemeData darkTheme = ThemeData(
     surface: _darkSurfaceColor,
     error: _darkErrorColor,
     onPrimary: Colors.black,
-    onSecondary: Colors.black,
+    onSecondary: _darkOnSecondaryColor,
     onSurface: Colors.white70,
     onError: Colors.black,
   ),
@@ -52,8 +53,8 @@ ThemeData darkTheme = ThemeData(
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
-      foregroundColor: _darkColorScheme.onSecondary,
-      backgroundColor: _darkColorScheme.secondary,
+      foregroundColor: _darkOnSecondaryColor,
+      backgroundColor: _darkSecondaryColor,
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
       textStyle: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.w600),
@@ -118,5 +119,3 @@ ThemeData darkTheme = ThemeData(
     margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
   ),
 );
-
-ColorScheme get _darkColorScheme => darkTheme.colorScheme;
