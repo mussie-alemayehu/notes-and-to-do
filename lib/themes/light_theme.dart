@@ -5,7 +5,7 @@ const Color _lightPrimaryVariantColor = Color(0xFF388E3C);
 const Color _lightSecondaryColor = Color(0xFFFFC107);
 const Color _lightSecondaryVariantColor = Color(0xFFFFA000);
 const Color _lightBackgroundColor = Color(0xFFFFFFFF);
-const Color _lightSurfaceColor = Color(0xFFEEEEEE);
+const Color _lightSurfaceColor = Color(0xFFF5F5F5);
 const Color _lightErrorColor = Color(0xFFF44336);
 
 // Light Theme Definition
@@ -47,16 +47,17 @@ ThemeData lightTheme = ThemeData(
       fontSize: 22.0,
       fontWeight: FontWeight.bold,
     ),
+    bodySmall: TextStyle(color: Colors.black54),
+    labelLarge: TextStyle(fontSize: 14.0, fontWeight: FontWeight.w500),
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
-      foregroundColor: Colors.white,
-      backgroundColor: _lightPrimaryColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      textStyle: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.w500),
+      foregroundColor: _lightColorScheme.onSecondary,
+      backgroundColor: _lightColorScheme.secondary,
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+      textStyle: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.w600),
+      elevation: 4.0,
     ),
   ),
   textButtonTheme: TextButtonThemeData(
@@ -72,35 +73,39 @@ ThemeData lightTheme = ThemeData(
   outlinedButtonTheme: OutlinedButtonThemeData(
     style: OutlinedButton.styleFrom(
       foregroundColor: _lightPrimaryColor,
-      side: const BorderSide(color: _lightPrimaryColor),
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      textStyle: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.w500),
+      side: const BorderSide(color: _lightPrimaryColor, width: 1.5),
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+      textStyle: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.w600),
     ),
   ),
   inputDecorationTheme: InputDecorationTheme(
     filled: true,
     fillColor: _lightSurfaceColor,
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8.0),
+      borderRadius: BorderRadius.circular(10.0),
       borderSide: BorderSide.none,
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8.0),
+      borderRadius: BorderRadius.circular(10.0),
       borderSide: const BorderSide(color: _lightPrimaryColor, width: 2.0),
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8.0),
+      borderRadius: BorderRadius.circular(10.0),
       borderSide: BorderSide(color: Colors.grey.shade400, width: 1.0),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10.0),
+      borderSide: const BorderSide(color: _lightErrorColor, width: 2.0),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10.0),
+      borderSide: const BorderSide(color: _lightErrorColor, width: 2.5),
     ),
     hintStyle: TextStyle(color: Colors.grey.shade600),
     labelStyle: const TextStyle(color: Colors.black87),
-    contentPadding: const EdgeInsets.symmetric(
-      horizontal: 12.0,
-      vertical: 15.0,
-    ),
+    contentPadding:
+        const EdgeInsets.symmetric(horizontal: 16.0, vertical: 18.0),
   ),
   floatingActionButtonTheme: const FloatingActionButtonThemeData(
     backgroundColor: _lightSecondaryColor,
@@ -109,10 +114,13 @@ ThemeData lightTheme = ThemeData(
   ),
   cardTheme: CardTheme(
     color: _lightSurfaceColor,
-    elevation: 2.0,
+    elevation: 3.0,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8.0),
+      borderRadius: BorderRadius.circular(10.0),
     ),
-    margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+    margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
   ),
 );
+
+// Helper ColorScheme getter to be used within the theme
+ColorScheme get _lightColorScheme => lightTheme.colorScheme;
