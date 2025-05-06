@@ -177,7 +177,7 @@ class _LoginScreenState extends State<_LoginScreen> {
             const SizedBox(height: 12),
 
             OutlinedButton(
-              onPressed: _signInWithGoogle,
+              onPressed: isLoading ? null : _signInWithGoogle,
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -194,7 +194,7 @@ class _LoginScreenState extends State<_LoginScreen> {
             const SizedBox(height: 24),
 
             TextButton(
-              onPressed: widget.switchMethod,
+              onPressed: isLoading ? null : widget.switchMethod,
               child: const Text('Create an Account'),
             ).animate(effects: const [
               FadeEffect(),
@@ -210,7 +210,7 @@ class _LoginScreenState extends State<_LoginScreen> {
 class _SignUpScreen extends StatefulWidget {
   final VoidCallback switchMethod;
 
-  const _SignUpScreen({Key? key, required this.switchMethod}) : super(key: key);
+  const _SignUpScreen({Key? key, required this.switchMethod});
 
   @override
   State<_SignUpScreen> createState() => _SignUpScreenState();
@@ -339,7 +339,7 @@ class _SignUpScreenState extends State<_SignUpScreen> {
             const SizedBox(height: 24),
 
             TextButton(
-              onPressed: widget.switchMethod,
+              onPressed: isLoading ? null : widget.switchMethod,
               child: const Text('Login'),
             ).animate(effects: const [
               FadeEffect(),
