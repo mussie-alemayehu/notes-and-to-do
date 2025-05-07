@@ -54,7 +54,6 @@ class CustomDrawer extends StatelessWidget {
                 onChanged: (newMode) {
                   if (newMode != null) {
                     themeNotifier.setThemeMode(newMode);
-
                     Navigator.of(ctx).pop();
                   }
                 },
@@ -71,12 +70,62 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
+  // Function to show logout confirmation dialog
+  Future<void> _confirmLogout(BuildContext context) async {
+    final bool confirm = await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(
+              'Confirm Logout',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+            ),
+            content: Text(
+              'Are you sure you want to log out?',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: Text(
+                  'Logout',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false; // Return false if the dialog is dismissed
+
+    if (confirm && context.mounted) {
+      final showSnackBar = ScaffoldMessenger.of(context).showSnackBar;
+      final colorScheme = Theme.of(context).colorScheme;
+
+      await AuthServices().signOut();
+      showSnackBar(
+        SnackBar(
+          content: const Text('Logged out!'),
+          backgroundColor: colorScheme.primary,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userEmail = FirebaseAuth.instance.currentUser?.email;
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme; // Capture text theme
+    final textTheme = Theme.of(context).textTheme;
 
     return Drawer(
       child: Container(
@@ -106,7 +155,6 @@ class CustomDrawer extends StatelessWidget {
                     Text(
                       'Welcome!',
                       style: textTheme.titleLarge?.copyWith(
-                        // Use captured textTheme
                         color: colorScheme.onPrimary,
                         fontWeight: FontWeight.bold,
                       ),
@@ -115,7 +163,6 @@ class CustomDrawer extends StatelessWidget {
                       Text(
                         userEmail,
                         style: textTheme.bodyMedium?.copyWith(
-                          // Use captured textTheme
                           color: colorScheme.onPrimary.withValues(alpha: 0.8),
                         ),
                       ),
@@ -137,7 +184,6 @@ class CustomDrawer extends StatelessWidget {
                     title: Text(
                       'Notes',
                       style: textTheme.titleMedium?.copyWith(
-                        // Use captured textTheme
                         color: selectedIndex == 0
                             ? colorScheme.onSurface
                             : colorScheme.onSurface.withValues(alpha: 0.9),
@@ -157,7 +203,6 @@ class CustomDrawer extends StatelessWidget {
                     FadeEffect(duration: 300.ms),
                     SlideEffect(begin: Offset(-0.1, 0))
                   ]),
-
                   ListTile(
                     leading: Icon(
                       Icons.task_alt,
@@ -168,7 +213,6 @@ class CustomDrawer extends StatelessWidget {
                     title: Text(
                       'To-Dos',
                       style: textTheme.titleMedium?.copyWith(
-                        // Use captured textTheme
                         color: selectedIndex == 1
                             ? colorScheme.onSurface
                             : colorScheme.onSurface.withValues(alpha: 0.9),
@@ -188,10 +232,7 @@ class CustomDrawer extends StatelessWidget {
                     FadeEffect(duration: 300.ms, delay: 50.ms),
                     SlideEffect(begin: Offset(-0.1, 0), delay: 50.ms)
                   ]),
-
                   const Divider(height: 32, thickness: 1),
-
-                  // Theme Selection ListTile
                   ListTile(
                     leading: Icon(
                       Icons.brightness_medium,
@@ -200,8 +241,8 @@ class CustomDrawer extends StatelessWidget {
                     title: Text(
                       'Theme',
                       style: textTheme.titleMedium?.copyWith(
-                          color:
-                              colorScheme.onSurface), // Use captured textTheme
+                        color: colorScheme.onSurface,
+                      ),
                     ),
                     subtitle: Text(
                       _getThemeModeText(themeNotifier.themeMode),
@@ -219,9 +260,7 @@ class CustomDrawer extends StatelessWidget {
                     FadeEffect(duration: 300.ms, delay: 100.ms),
                     SlideEffect(begin: Offset(-0.1, 0), delay: 100.ms)
                   ]),
-
                   const Divider(height: 32, thickness: 1),
-
                   ListTile(
                     leading: Icon(
                       Icons.logout,
@@ -232,19 +271,9 @@ class CustomDrawer extends StatelessWidget {
                       style: textTheme.titleMedium
                           ?.copyWith(color: colorScheme.onSurface),
                     ),
-                    onTap: () async {
-                      Navigator.of(context).pop();
-                      final showSnackBar =
-                          ScaffoldMessenger.of(context).showSnackBar;
-                      final colorScheme = Theme.of(context).colorScheme;
-
-                      await AuthServices().signOut();
-                      showSnackBar(
-                        SnackBar(
-                          content: const Text('Logged out!'),
-                          backgroundColor: colorScheme.primary,
-                        ),
-                      );
+                    onTap: () {
+                      // Call the confirmation dialog
+                      _confirmLogout(context);
                     },
                   ).animate(effects: [
                     FadeEffect(duration: 300.ms, delay: 150.ms),
