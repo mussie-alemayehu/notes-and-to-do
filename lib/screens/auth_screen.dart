@@ -69,10 +69,14 @@ class _LoginScreenState extends State<_LoginScreen> {
   final _passwordController = TextEditingController();
   bool isLoading = false;
 
+  // ValueNotifier for password visibility
+  final ValueNotifier<bool> _isPasswordVisible = ValueNotifier<bool>(false);
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _isPasswordVisible.dispose();
     super.dispose();
   }
 
@@ -136,10 +140,7 @@ class _LoginScreenState extends State<_LoginScreen> {
                   .titleLarge
                   ?.copyWith(color: Theme.of(context).colorScheme.primary),
             ).animate(effects: const [FadeEffect(), SlideEffect()]),
-
             const SizedBox(height: 24),
-
-            // Standard TextField using theme's InputDecorationTheme
             TextField(
               controller: _emailController,
               decoration: const InputDecoration(labelText: 'Email'),
@@ -148,22 +149,38 @@ class _LoginScreenState extends State<_LoginScreen> {
               FadeEffect(),
               SlideEffect(delay: Duration(milliseconds: 100))
             ]),
-
             const SizedBox(height: 16),
-
-            // Standard TextField using theme's InputDecorationTheme
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
-              keyboardType: TextInputType.visiblePassword,
-            ).animate(effects: const [
-              FadeEffect(),
-              SlideEffect(delay: Duration(milliseconds: 200))
-            ]),
-
+            ValueListenableBuilder<bool>(
+              valueListenable: _isPasswordVisible,
+              builder: (context, isPasswordVisible, child) {
+                return TextField(
+                  controller: _passwordController,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
+                      ),
+                      onPressed: () {
+                        _isPasswordVisible.value = !isPasswordVisible;
+                      },
+                    ),
+                  ),
+                  obscureText: !isPasswordVisible,
+                  keyboardType: TextInputType.visiblePassword,
+                ).animate(effects: const [
+                  FadeEffect(),
+                  SlideEffect(delay: Duration(milliseconds: 200))
+                ]);
+              },
+            ),
             const SizedBox(height: 24),
-
             isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : ElevatedButton(
@@ -173,9 +190,7 @@ class _LoginScreenState extends State<_LoginScreen> {
                     FadeEffect(),
                     SlideEffect(delay: Duration(milliseconds: 300))
                   ]),
-
             const SizedBox(height: 12),
-
             OutlinedButton(
               onPressed: isLoading ? null : _signInWithGoogle,
               child: const Row(
@@ -190,9 +205,7 @@ class _LoginScreenState extends State<_LoginScreen> {
               FadeEffect(),
               SlideEffect(delay: Duration(milliseconds: 400))
             ]),
-
             const SizedBox(height: 24),
-
             TextButton(
               onPressed: isLoading ? null : widget.switchMethod,
               child: const Text('Create an Account'),
@@ -222,11 +235,18 @@ class _SignUpScreenState extends State<_SignUpScreen> {
   final _confirmPasswordController = TextEditingController();
   bool isLoading = false;
 
+  // ValueNotifiers for password visibility
+  final ValueNotifier<bool> _isPasswordVisible = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _isConfirmPasswordVisible =
+      ValueNotifier<bool>(false);
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _isPasswordVisible.dispose();
+    _isConfirmPasswordVisible.dispose();
     super.dispose();
   }
 
@@ -288,7 +308,6 @@ class _SignUpScreenState extends State<_SignUpScreen> {
 
             const SizedBox(height: 24),
 
-            // Standard TextField using theme's InputDecorationTheme
             TextField(
               controller: _emailController,
               decoration: const InputDecoration(labelText: 'Email'),
@@ -300,29 +319,70 @@ class _SignUpScreenState extends State<_SignUpScreen> {
 
             const SizedBox(height: 16),
 
-            // Standard TextField using theme's InputDecorationTheme
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Password'),
-              keyboardType: TextInputType.visiblePassword,
-            ).animate(effects: const [
-              FadeEffect(),
-              SlideEffect(delay: Duration(milliseconds: 200))
-            ]),
-
+            // Password TextField with visibility toggle
+            ValueListenableBuilder<bool>(
+              valueListenable: _isPasswordVisible,
+              builder: (context, isPasswordVisible, child) {
+                return TextField(
+                  controller: _passwordController,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    suffixIcon: IconButton(
+                        icon: Icon(
+                          isPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
+                        ),
+                        onPressed: () {
+                          _isPasswordVisible.value = !isPasswordVisible;
+                        }),
+                  ),
+                  obscureText: !isPasswordVisible,
+                  keyboardType: TextInputType.visiblePassword,
+                ).animate(effects: const [
+                  FadeEffect(),
+                  SlideEffect(delay: Duration(milliseconds: 200))
+                ]);
+              },
+            ),
             const SizedBox(height: 16),
 
-            // Standard TextField using theme's InputDecorationTheme
-            TextField(
-              controller: _confirmPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Confirm Password'),
-              keyboardType: TextInputType.visiblePassword,
-            ).animate(effects: const [
-              FadeEffect(),
-              SlideEffect(delay: Duration(milliseconds: 300))
-            ]),
+            // Confirm Password TextField with visibility toggle
+            ValueListenableBuilder<bool>(
+              valueListenable: _isConfirmPasswordVisible,
+              builder: (context, isConfirmPasswordVisible, child) {
+                return TextField(
+                  controller: _confirmPasswordController,
+                  decoration: InputDecoration(
+                    labelText: 'Confirm Password',
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        isConfirmPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
+                      ),
+                      onPressed: () {
+                        _isConfirmPasswordVisible.value =
+                            !isConfirmPasswordVisible;
+                      },
+                    ),
+                  ),
+                  obscureText: !isConfirmPasswordVisible,
+                  keyboardType: TextInputType.visiblePassword,
+                ).animate(effects: const [
+                  FadeEffect(),
+                  SlideEffect(delay: Duration(milliseconds: 300))
+                ]);
+              },
+            ),
 
             const SizedBox(height: 24),
 
