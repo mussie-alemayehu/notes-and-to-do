@@ -159,19 +159,12 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
             icon: const Icon(Icons.save),
             tooltip: 'Save Changes',
             onPressed: isChanged ? _saveChanges : null,
-            color: isChanged
-                ? Theme.of(context).colorScheme.onPrimary
-                : Theme.of(context)
-                    .colorScheme
-                    .onPrimary
-                    .withValues(alpha: 0.5),
           ),
           if (!isNew)
             IconButton(
-              icon: const Icon(Icons.delete_outline),
+              icon: const Icon(Icons.delete),
               tooltip: 'Delete Note',
               onPressed: _confirmAndDelete,
-              color: Theme.of(context).colorScheme.onPrimary,
             ),
           const SizedBox(width: 8),
         ],

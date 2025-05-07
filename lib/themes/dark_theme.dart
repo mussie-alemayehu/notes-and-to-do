@@ -35,6 +35,10 @@ ThemeData darkTheme = ThemeData(
       fontSize: 20.0,
       fontWeight: FontWeight.bold,
     ),
+    actionsIconTheme: IconThemeData(
+      color: _darkPrimaryVariantColor,
+      size: 24.0,
+    ),
   ),
   textTheme: const TextTheme(
     bodyMedium: TextStyle(color: Colors.white70, fontSize: 16.0),

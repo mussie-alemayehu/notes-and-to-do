@@ -20,6 +20,50 @@ class TabsScreen extends StatefulWidget {
 class _TabScreenState extends State<TabsScreen> {
   int _selectedIndex = 0;
 
+  void showMessageSnackBar(String message, [bool success = true]) {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    scaffoldMessenger.removeCurrentSnackBar();
+    scaffoldMessenger.showSnackBar(
+      SnackBar(
+        backgroundColor: success ? colorScheme.primary : colorScheme.secondary,
+        content: Text(
+          message,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color:
+                    success ? colorScheme.onPrimary : colorScheme.onSecondary,
+              ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  Future<bool> confirmCompletedTodosClear() async {
+    final confirm = await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Confirm Clear'),
+            content: const Text(
+                'Are you sure you want to clear all completed tasks?'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Clear'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    return confirm;
+  }
+
   Future<String> _showModalBottomSheet(BuildContext context) async {
     String newAction = '';
 
@@ -86,7 +130,6 @@ class _TabScreenState extends State<TabsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
     final todosData = Provider.of<ToDos>(context);
     List<ToDo> completedToDos = todosData.completedToDos;
 
@@ -111,49 +154,17 @@ class _TabScreenState extends State<TabsScreen> {
                 icon: const Icon(Icons.clear_all),
                 tooltip: 'Clean completed tasks.',
                 onPressed: () async {
-                  if (completedToDos.isEmpty) {
-                    scaffoldMessenger.removeCurrentSnackBar();
-                    scaffoldMessenger.showSnackBar(
-                      SnackBar(
-                        backgroundColor:
-                            Theme.of(context).colorScheme.secondary,
-                        content: Text(
-                          'There are no completed tasks yet.',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(
-                                color:
-                                    Theme.of(context).colorScheme.onSecondary,
-                              ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    );
-                  } else {
-                    await todosData.deleteCompletedToDos();
+                  if (completedToDos.isNotEmpty) {
+                    final confirm = await confirmCompletedTodosClear();
+                    if (!confirm) return;
 
-                    scaffoldMessenger.removeCurrentSnackBar();
-                    if (context.mounted) {
-                      scaffoldMessenger.showSnackBar(
-                        // Show success message
-                        SnackBar(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
-                          content: Text(
-                            'Completed tasks cleared!',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimary),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      );
-                    }
+                    await todosData.deleteCompletedToDos();
+                    showMessageSnackBar('Completed tasks cleared!');
+                  } else {
+                    showMessageSnackBar(
+                      'There are no completed tasks yet.',
+                      false,
+                    );
                   }
                 },
               ),
