@@ -4,25 +4,25 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 TextTheme textTheme = TextTheme(
-  bodyLarge: GoogleFonts.roboto(
+  bodyLarge: GoogleFonts.poppins(
     fontSize: 18,
   ),
-  bodyMedium: GoogleFonts.roboto(
+  bodyMedium: GoogleFonts.poppins(
     fontSize: 14,
   ),
-  bodySmall: GoogleFonts.roboto(
+  bodySmall: GoogleFonts.poppins(
     fontSize: 11,
   ),
-  labelMedium: GoogleFonts.roboto(
+  labelMedium: GoogleFonts.poppins(
     fontSize: 13,
     fontStyle: FontStyle.italic,
     decoration: TextDecoration.lineThrough,
   ),
-  headlineLarge: GoogleFonts.roboto(
+  headlineLarge: GoogleFonts.poppins(
     fontSize: 22,
     fontWeight: FontWeight.bold,
   ),
-  headlineMedium: GoogleFonts.roboto(
+  headlineMedium: GoogleFonts.poppins(
     fontSize: 18,
     fontWeight: FontWeight.bold,
   ),

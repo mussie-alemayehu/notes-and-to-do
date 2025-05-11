@@ -21,141 +21,220 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
   final titleController = TextEditingController();
   final contentController = TextEditingController();
   bool isChanged = false;
-  bool isFirstChange = true;
   Note? existingNote;
   bool isInit = true;
 
-  late final Function popScreen;
+  // Focus node for the content TextField
+  final FocusNode _contentFocusNode = FocusNode();
 
   @override
-  didChangeDependencies() {
+  void didChangeDependencies() {
     super.didChangeDependencies();
     if (isInit) {
-      popScreen = () {
-        Navigator.of(context).pop();
-      };
       notesData = Provider.of<Notes>(context, listen: false);
-      try {
-        isNew = (ModalRoute.of(context)!.settings.arguments as bool?) ?? false;
-      } catch (error) {
-        existingNote = ModalRoute.of(context)!.settings.arguments as Note;
+
+      final arg = ModalRoute.of(context)!.settings.arguments;
+      if (arg is bool) {
+        isNew = arg;
+        existingNote = null;
+      } else if (arg is Note) {
+        existingNote = arg;
         isNew = false;
+      } else {
+        isNew = true;
+        existingNote = null;
       }
+
       titleController.text = isNew ? '' : existingNote!.title;
       contentController.text = isNew ? '' : existingNote!.content;
+
+      titleController.addListener(_onTextChanged);
+      contentController.addListener(_onTextChanged);
+
+      isInit = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    titleController.removeListener(_onTextChanged);
+    contentController.removeListener(_onTextChanged);
+    titleController.dispose();
+    contentController.dispose();
+    _contentFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    final currentTitle = titleController.text;
+    final currentContent = contentController.text;
+
+    final initialTitle = isNew ? '' : existingNote!.title;
+    final initialContent = isNew ? '' : existingNote!.content;
+
+    final hasChanged =
+        currentTitle != initialTitle || currentContent != initialContent;
+
+    if (hasChanged != isChanged) {
+      setState(() {
+        isChanged = hasChanged;
+      });
     }
   }
 
   Future<void> _saveChanges() async {
-    final newNote = Note(
+    if (titleController.text.trim().isEmpty &&
+        contentController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Note is empty, not saving.')),
+      );
+      Navigator.of(context).pop();
+      return;
+    }
+
+    final noteToSave = Note(
       id: isNew ? DateTime.now().toString() : existingNote!.id,
-      content: contentController.text,
-      title: titleController.text,
+      firebaseId: isNew ? null : existingNote!.firebaseId,
+      content: contentController.text.trim(),
+      title: titleController.text.trim(),
+      clientTimestamp: DateTime.now().millisecondsSinceEpoch,
       lastEdited: DateTime.now(),
     );
 
     if (isNew) {
-      await notesData.addNote(newNote);
+      await notesData.addNote(noteToSave);
     } else {
-      await notesData.updateNote(newNote);
+      await notesData.updateNote(noteToSave);
     }
-    // Navigator.of(context).pop();
-    popScreen();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(isNew ? 'Note saved!' : 'Note updated!')),
+      );
+      Navigator.of(context).pop();
+    }
   }
 
-  InputDecoration inputDecoration(String hintText) {
-    return InputDecoration.collapsed(
-      hintText: hintText,
-    );
+  Future<void> _confirmAndDelete() async {
+    final bool confirm = await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Delete Note'),
+            content: const Text('Are you sure you want to delete this note?'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: Text('Delete',
+                    style: TextStyle(color: Theme.of(ctx).colorScheme.error)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (confirm && existingNote != null) {
+      await notesData.deleteNoteWithId(existingNote!.id ?? '');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Note deleted!')),
+        );
+
+        Navigator.of(context).pop();
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notes'),
+        title: Text(isNew ? 'New Note' : 'Edit Note'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: IconButton(
-              icon: const Icon(Icons.save),
-              tooltip: 'Save Changes',
-              onPressed: isChanged ? _saveChanges : null,
-            ),
+          IconButton(
+            icon: const Icon(Icons.save),
+            tooltip: 'Save Changes',
+            onPressed: isChanged ? _saveChanges : null,
           ),
+          if (!isNew)
+            IconButton(
+              icon: const Icon(Icons.delete),
+              tooltip: 'Delete Note',
+              onPressed: _confirmAndDelete,
+            ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 10),
+            // Title TextField
             TextField(
-              decoration: inputDecoration('Title'),
+              decoration: _buildInputDecoration('Title'),
               textCapitalization: TextCapitalization.sentences,
               controller: titleController,
-              cursorColor: Theme.of(context).colorScheme.tertiary,
-              style: Theme.of(context).textTheme.headlineMedium,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
               autofocus: isNew,
-              onChanged: (value) {
-                if (isFirstChange) {
-                  setState(() {
-                    isChanged = true;
-                  });
-                  isFirstChange = false;
-                }
-              },
+              maxLines: null,
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 16),
+
+            // Content TextField (Expanded to fill remaining space)
             Expanded(
-              child: SingleChildScrollView(
-                child: TextField(
-                  decoration: inputDecoration('Note something.'),
-                  textCapitalization: TextCapitalization.sentences,
-                  controller: contentController,
-                  cursorColor: Theme.of(context).colorScheme.tertiary,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  maxLength: 65535,
-                  minLines: 50,
-                  maxLines: 9999,
-                  onChanged: (value) {
-                    if (isFirstChange) {
-                      setState(() {
-                        isChanged = true;
-                      });
-                      isFirstChange = false;
-                    }
-                  },
+              child: GestureDetector(
+                onTap: () {
+                  // Request focus for the content TextField when the body is tapped
+
+                  FocusScope.of(context).requestFocus(_contentFocusNode);
+                },
+                child: SizedBox(
+                  width: double.infinity,
+                  height: double.infinity,
+                  child: SingleChildScrollView(
+                    // Allows scrolling if content exceeds screen height
+                    child: TextField(
+                      focusNode: _contentFocusNode,
+                      decoration: _buildInputDecoration('Start writing...'),
+                      textCapitalization: TextCapitalization.sentences,
+                      controller: contentController,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.9),
+                          ),
+                      maxLength: 65535,
+                      maxLines: null,
+                      minLines: null,
+                    ),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 10),
-            if (!isNew)
-              Card(
-                color: Theme.of(context).colorScheme.secondary,
-                margin: const EdgeInsets.only(top: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    IconButton(
-                      onPressed: () async {
-                        await notesData.deleteNoteWithId(existingNote!.id);
-                        // Navigator.of(context).pop();
-                        popScreen();
-                      },
-                      icon: Icon(
-                        Icons.delete,
-                        color: Theme.of(context).colorScheme.tertiary,
-                      ),
-                      tooltip: 'Delete Note',
-                    )
-                  ],
-                ),
-              ),
           ],
         ),
       ),
+    );
+  }
+
+  InputDecoration _buildInputDecoration(String hintText) {
+    return InputDecoration(
+      hintText: hintText,
+      border: InputBorder.none,
+      hoverColor: Colors.transparent,
+      focusedBorder: InputBorder.none,
+      enabledBorder: InputBorder.none,
+      contentPadding: EdgeInsets.zero,
+      filled: true,
+      fillColor: Theme.of(context).scaffoldBackgroundColor,
     );
   }
 }

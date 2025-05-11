@@ -1,5 +1,3 @@
-// this widget will be displayed representing a single note in NotesListScreen screen
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -15,7 +13,6 @@ class NoteListItem extends StatelessWidget {
     required this.lastEdited,
   });
 
-  // a getter that returns the date in a user readable format
   String get _readableDate {
     if (lastEdited.isAfter(
       DateTime.now().subtract(
@@ -24,36 +21,48 @@ class NoteListItem extends StatelessWidget {
     )) {
       return DateFormat.Hm().format(lastEdited);
     }
+
     return DateFormat.MMMd().format(lastEdited);
   }
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: Theme.of(context).colorScheme.secondary,
-      margin: const EdgeInsets.all(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // display the title of the note
             Text(
               title,
-              style: Theme.of(context).textTheme.headlineMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
-            const SizedBox(height: 10),
-            // display a maximum of 3 lines of the content of the note
+            const SizedBox(height: 8),
             Text(
               content,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.8),
+                  ),
               maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 10),
-            // display a user-readable format of the date
+            const SizedBox(height: 12),
             Text(
               'Last edited: $_readableDate',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
+                  ),
             ),
           ],
         ),
