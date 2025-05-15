@@ -1,4 +1,4 @@
-name: notes
+name: notes_and_todos
 description: A new Flutter project.
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -53,19 +53,16 @@ dev_dependencies:
     sdk: flutter
   flutter_native_splash: ^2.3.5
   flutter_lints: ^5.0.0
-  flutter_launcher_icons: ^0.14.3
 
 flutter_native_splash:
-  color: "#191919"
   image: dev_assets/notes.png
-
-flutter_launcher_icons:
-  android: true
-  image_path: "dev_assets/notes.png"
-  web: 
-    generate: true
-    image_path: "dev_assets/notes.png"
-    theme_color: "#191919"
+  color: "#E8F5E9"
+  color_dark: "#1B2E1A"
+  android_12:
+    image: dev_assets/notes.png
+    icon_background_color: "#E8F5E9"
+    icon_background_color_dark: "#1B2E1A"
+  web: false
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
