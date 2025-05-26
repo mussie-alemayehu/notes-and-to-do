@@ -211,7 +211,6 @@ class _NoteDetailsScreenState extends State<NoteDetailsScreen> {
                                 .onSurface
                                 .withValues(alpha: 0.9),
                           ),
-                      maxLength: 65535,
                       maxLines: null,
                       minLines: null,
                     ),

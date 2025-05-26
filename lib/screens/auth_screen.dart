@@ -182,10 +182,21 @@ class _LoginScreenState extends State<_LoginScreen> {
                 SlideEffect(delay: Duration(milliseconds: 300))
               ],
             ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: isLoading ? null : widget.switchMethod,
-              child: const Text('Create an Account'),
+            const SizedBox(height: 24),
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Text('Don\'t have an account?'),
+                const SizedBox(width: 8),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.all(0),
+                  ),
+                  onPressed: isLoading ? null : widget.switchMethod,
+                  child: const Text('Create an Account'),
+                ),
+              ],
             ).animate(effects: const [
               FadeEffect(),
               SlideEffect(delay: Duration(milliseconds: 500))
@@ -272,7 +283,7 @@ class _SignUpScreenState extends State<_SignUpScreen> {
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               'Create Account',
@@ -361,26 +372,40 @@ class _SignUpScreenState extends State<_SignUpScreen> {
               },
             ),
             const SizedBox(height: 48),
-            ElevatedButton(
-              onPressed: isLoading ? null : _signUp,
-              child: isLoading
-                  ? const Center(
-                      child: SizedBox.square(
-                        dimension: 24,
-                        child: CircularProgressIndicator(),
-                      ),
-                    )
-                  : const Text('Sign Up'),
-            ).animate(
-              effects: const [
-                FadeEffect(),
-                SlideEffect(delay: Duration(milliseconds: 400))
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: isLoading ? null : _signUp,
+                child: isLoading
+                    ? const Center(
+                        child: SizedBox.square(
+                          dimension: 24,
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    : const Text('Sign Up'),
+              ).animate(
+                effects: const [
+                  FadeEffect(),
+                  SlideEffect(delay: Duration(milliseconds: 400))
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: isLoading ? null : widget.switchMethod,
-              child: const Text('Login'),
+            const SizedBox(height: 24),
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const SizedBox(height: 8),
+                const Text('Already have an account?'),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.all(0),
+                  ),
+                  onPressed: isLoading ? null : widget.switchMethod,
+                  child: const Text('Login'),
+                ),
+              ],
             ).animate(effects: const [
               FadeEffect(),
               SlideEffect(delay: Duration(milliseconds: 500))
