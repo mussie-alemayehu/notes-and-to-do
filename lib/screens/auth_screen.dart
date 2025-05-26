@@ -104,21 +104,6 @@ class _LoginScreenState extends State<_LoginScreen> {
     setState(() => isLoading = false);
   }
 
-  void _signInWithGoogle() async {
-    setState(() => isLoading = true);
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final auth = AuthServices();
-    final errorMessage = await auth.signInWithGoogle();
-
-    if (errorMessage != null) {
-      scaffoldMessenger.showSnackBar(
-        SnackBar(content: Text(errorMessage)),
-      );
-    }
-
-    setState(() => isLoading = false);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Animate(
@@ -180,32 +165,24 @@ class _LoginScreenState extends State<_LoginScreen> {
                 ]);
               },
             ),
-            const SizedBox(height: 24),
-            isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : ElevatedButton(
-                    onPressed: _login,
-                    child: const Text('Sign In'),
-                  ).animate(effects: const [
-                    FadeEffect(),
-                    SlideEffect(delay: Duration(milliseconds: 300))
-                  ]),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: isLoading ? null : _signInWithGoogle,
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.person),
-                  SizedBox(width: 8),
-                  Text('Sign In with Google'),
-                ],
-              ),
-            ).animate(effects: const [
-              FadeEffect(),
-              SlideEffect(delay: Duration(milliseconds: 400))
-            ]),
-            const SizedBox(height: 24),
+            const SizedBox(height: 48),
+            ElevatedButton(
+              onPressed: isLoading ? null : _login,
+              child: isLoading
+                  ? const Center(
+                      child: SizedBox.square(
+                        dimension: 24,
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : const Text('Sign Up'),
+            ).animate(
+              effects: const [
+                FadeEffect(),
+                SlideEffect(delay: Duration(milliseconds: 300))
+              ],
+            ),
+            const SizedBox(height: 8),
             TextButton(
               onPressed: isLoading ? null : widget.switchMethod,
               child: const Text('Create an Account'),
@@ -383,21 +360,24 @@ class _SignUpScreenState extends State<_SignUpScreen> {
                 ]);
               },
             ),
-
-            const SizedBox(height: 24),
-
-            isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : ElevatedButton(
-                    onPressed: _signUp,
-                    child: const Text('Sign Up'),
-                  ).animate(effects: const [
-                    FadeEffect(),
-                    SlideEffect(delay: Duration(milliseconds: 400))
-                  ]),
-
-            const SizedBox(height: 24),
-
+            const SizedBox(height: 48),
+            ElevatedButton(
+              onPressed: isLoading ? null : _signUp,
+              child: isLoading
+                  ? const Center(
+                      child: SizedBox.square(
+                        dimension: 24,
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : const Text('Sign Up'),
+            ).animate(
+              effects: const [
+                FadeEffect(),
+                SlideEffect(delay: Duration(milliseconds: 400))
+              ],
+            ),
+            const SizedBox(height: 8),
             TextButton(
               onPressed: isLoading ? null : widget.switchMethod,
               child: const Text('Login'),
