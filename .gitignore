@@ -47,3 +47,7 @@ app.*.map.json
 firebase.json
 lib/firebase_options.dart
 android/app/google-services.json
+
+# FVM Version Cache
+.fvm/
+.fvmrc

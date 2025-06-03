@@ -175,7 +175,7 @@ class _LoginScreenState extends State<_LoginScreen> {
                         child: CircularProgressIndicator(),
                       ),
                     )
-                  : const Text('Sign Up'),
+                  : const Text('Login'),
             ).animate(
               effects: const [
                 FadeEffect(),
