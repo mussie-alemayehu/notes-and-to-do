@@ -1,4 +1,4 @@
-# Your Project Name Here (e.g., SyncNotes & Todos)
+# Offline First Notes and ToDos
 
 A powerful and seamless notes and todo tracking application designed for both online and offline productivity.
 
